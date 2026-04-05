@@ -14,12 +14,10 @@ export type FitMode = "height" | "width" | "contain";
 
 /** 设置状态接口 */
 interface SettingsState {
-  isLowSpec: boolean; // 是否开启低配模式
   sidebarCollapsed: boolean; // 侧边栏是否折叠
   readingMode: ReadingMode; // 当前阅读模式
   readingDirection: ReadingDirection; // 翻页方向
   fitMode: FitMode; // 图片适配模式
-  toggleLowSpec: () => void;
   toggleSidebar: () => void;
   setReadingMode: (mode: ReadingMode) => void;
   setReadingDirection: (dir: ReadingDirection) => void;
@@ -32,12 +30,10 @@ interface SettingsState {
 export const useSettingsStore = create<SettingsState>()(
   persist(
     (set) => ({
-      isLowSpec: false,
       sidebarCollapsed: false,
       readingMode: "single",
       readingDirection: "ltr",
       fitMode: "height",
-      toggleLowSpec: () => set((s) => ({ isLowSpec: !s.isLowSpec })),
       toggleSidebar: () => set((s) => ({ sidebarCollapsed: !s.sidebarCollapsed })),
       setReadingMode: (mode) => set({ readingMode: mode }),
       setReadingDirection: (dir) => set({ readingDirection: dir }),

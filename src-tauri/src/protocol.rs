@@ -17,8 +17,6 @@ static SPINE_CACHE: std::sync::LazyLock<Mutex<HashMap<String, Vec<String>>>> =
 /// 路由：
 ///   comic://localhost/cover/{book_hash}            → 封面缩略图 (WebP)
 ///   comic://localhost/page/{book_hash}/{page_idx} → 页面图像（原始格式）
-/// 查询参数：
-///   ?quality=low → 以较低高度生成缓存，供低配模式复用
 pub fn handle_comic_protocol(
     ctx: tauri::UriSchemeContext<'_, tauri::Wry>,
     request: Request<Vec<u8>>,
@@ -37,11 +35,7 @@ pub fn handle_comic_protocol(
         ["cover", book_hash] => handle_cover(app, book_hash),
         ["page", book_hash, page_index_str] => {
             match page_index_str.parse::<usize>() {
-                Ok(page_index) => {
-                    let query = url.query().unwrap_or("");
-                    let max_height = if query.contains("quality=low") { 1200u32 } else { 0u32 };
-                    handle_page(app, book_hash, page_index, max_height)
-                }
+                Ok(page_index) => handle_page(app, book_hash, page_index),
                 Err(_) => error_response(400, "Invalid page index"),
             }
         }
@@ -80,7 +74,7 @@ struct BookInfo {
 }
 
 /// 处理页面请求
-fn handle_page(app: &tauri::AppHandle, book_hash: &str, page_index: usize, max_height: u32) -> Response<Vec<u8>> {
+fn handle_page(app: &tauri::AppHandle, book_hash: &str, page_index: usize) -> Response<Vec<u8>> {
     let app_data = match app.path().app_data_dir() {
         Ok(dir) => dir,
         Err(_) => return error_response(500, "Cannot resolve app data dir"),
@@ -89,7 +83,7 @@ fn handle_page(app: &tauri::AppHandle, book_hash: &str, page_index: usize, max_h
     let cache_dir = app_data.join("cache").join(book_hash);
 
     // 检查磁盘缓存 —— 尝试任何缓存格式
-    if let Some((bytes, mime)) = read_cached_page(&cache_dir, page_index, max_height) {
+    if let Some((bytes, mime)) = read_cached_page(&cache_dir, page_index) {
         return build_image_response(bytes, &mime);
     }
 
@@ -102,7 +96,7 @@ fn handle_page(app: &tauri::AppHandle, book_hash: &str, page_index: usize, max_h
     // 将提取工作卸载到工作线程
     let hash_owned = book_hash.to_string();
     let result = std::thread::spawn(move || {
-        extract_and_maybe_transcode(&book_info, &hash_owned, page_index, max_height, &cache_dir)
+        extract_and_maybe_transcode(&book_info, &hash_owned, page_index, &cache_dir)
     })
     .join();
 
@@ -119,12 +113,11 @@ fn handle_page(app: &tauri::AppHandle, book_hash: &str, page_index: usize, max_h
 /// 从存档中提取原始字节。仅在需要调整大小或浏览器不支持该格式时进行转码。
 ///
 /// 这样可以在常见格式（JPEG/PNG/WebP/GIF）下尽量保持零转码路径，
-/// 只在低配模式缩放或遇到浏览器不支持的格式时再做编码开销。
+/// 只在遇到浏览器不支持的格式时再做编码开销。
 fn extract_and_maybe_transcode(
     book_info: &BookInfo,
     book_hash: &str,
     page_index: usize,
-    max_height: u32,
     cache_dir: &PathBuf,
 ) -> Result<(Vec<u8>, String), Box<dyn std::error::Error + Send + Sync>> {
     // 提取原始字节
@@ -141,30 +134,8 @@ fn extract_and_maybe_transcode(
     let source_mime = detect_mime(&raw_bytes);
     let browser_native = matches!(source_mime.as_str(), "image/jpeg" | "image/png" | "image/webp" | "image/gif");
 
-    let (final_bytes, final_mime) = if max_height > 0 {
-        // 请求调整大小 → 必须解码 + 重新编码
-        let img = image::load_from_memory(&raw_bytes)
-            .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { format!("{}", e).into() })?;
-        if img.height() > max_height {
-            let resized = img.resize(u32::MAX, max_height, image::imageops::FilterType::Lanczos3);
-            // 如果可能则编码为原始格式，否则编码为 WebP
-            let (bytes, mime) = if source_mime == "image/jpeg" {
-                encode_jpeg(&resized, 85)?
-            } else {
-                encode_webp(&resized, 85.0)?
-            };
-            (bytes, mime)
-        } else if browser_native {
-            // 低于最大高度，无需调整大小，直通
-            (raw_bytes, source_mime)
-        } else {
-            // 不支持的格式，转换
-            let img = image::load_from_memory(&raw_bytes)
-                .map_err(|e| -> Box<dyn std::error::Error + Send + Sync> { format!("{}", e).into() })?;
-            encode_webp(&img, 85.0)?
-        }
-    } else if browser_native {
-        // 无需调整大小，浏览器原生支持格式 → 直接直通（零转码！）
+    let (final_bytes, final_mime) = if browser_native {
+        // 浏览器原生支持格式直接直通，保持零转码路径
         (raw_bytes, source_mime)
     } else {
         // BMP 或其他不支持格式 → 转换为 WebP
@@ -176,11 +147,7 @@ fn extract_and_maybe_transcode(
     // 缓存到磁盘
     let _ = std::fs::create_dir_all(cache_dir);
     let ext = mime_to_ext(&final_mime);
-    let cache_name = if max_height > 0 {
-        format!("page_{}_{max_height}p.{ext}", page_index)
-    } else {
-        format!("page_{page_index}.{ext}")
-    };
+    let cache_name = format!("page_{}.{}", page_index, ext);
     let _ = std::fs::write(cache_dir.join(&cache_name), &final_bytes);
 
     Ok((final_bytes, final_mime))
@@ -190,14 +157,10 @@ fn extract_and_maybe_transcode(
 
 /// 读取已缓存的页面
 /// 会按常见扩展名顺序尝试命中缓存，兼容不同转码结果。
-fn read_cached_page(cache_dir: &PathBuf, page_index: usize, max_height: u32) -> Option<(Vec<u8>, String)> {
+fn read_cached_page(cache_dir: &PathBuf, page_index: usize) -> Option<(Vec<u8>, String)> {
     let suffixes = ["jpg", "jpeg", "png", "webp", "gif"];
     for ext in &suffixes {
-        let name = if max_height > 0 {
-            format!("page_{}_{max_height}p.{ext}", page_index)
-        } else {
-            format!("page_{page_index}.{ext}")
-        };
+        let name = format!("page_{}.{}", page_index, ext);
         let path = cache_dir.join(&name);
         if path.exists() {
             if let Ok(bytes) = std::fs::read(&path) {

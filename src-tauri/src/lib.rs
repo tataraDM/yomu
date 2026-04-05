@@ -73,7 +73,6 @@ async fn warm_cache(
     state: tauri::State<'_, db::DbState>,
     book_hash: String,
     page_indices: Vec<usize>,
-    max_height: u32,
 ) -> Result<(), String> {
     let app_data = app.path().app_data_dir().map_err(|e| e.to_string())?;
 
@@ -128,11 +127,7 @@ async fn warm_cache(
         for page_index in page_indices {
             // 检查是否已存在任何格式的缓存
             let already_cached = ["jpg", "png", "webp", "gif"].iter().any(|e| {
-                let name = if max_height > 0 {
-                    format!("page_{}_{}p.{}", page_index, max_height, e)
-                } else {
-                    format!("page_{}.{}", page_index, e)
-                };
+                let name = format!("page_{}.{}", page_index, e);
                 cache_dir_owned.join(name).exists()
             });
             if already_cached { continue; }
@@ -162,35 +157,12 @@ async fn warm_cache(
 
             if let Some(raw_bytes) = raw_bytes {
                 // 检测格式并决定：直通或转码
-                let (final_bytes, final_ext) = if max_height > 0 {
-                    // 需要调整大小 → 必须解码并重新编码
-                    if let Ok(img) = image::load_from_memory(&raw_bytes) {
-                        if img.height() > max_height {
-                            let resized = img.resize(u32::MAX, max_height, image::imageops::FilterType::Lanczos3);
-                            let rgba = resized.to_rgba8();
-                            let (w, h) = (rgba.width(), rgba.height());
-                            let encoder = webp::Encoder::from_rgba(&rgba, w, h);
-                            let webp_data = encoder.encode(85.0);
-                            (webp_data.to_vec(), "webp")
-                        } else {
-                            // 满足最大高度要求时直接沿用原始格式，避免无意义转码
-                            let e = detect_ext(&raw_bytes);
-                            (raw_bytes, e)
-                        }
-                    } else {
-                        continue;
-                    }
-                } else {
-                    // 无需调整大小 → 直接直通
+                let (final_bytes, final_ext) = {
                     let e = detect_ext(&raw_bytes);
                     (raw_bytes, e)
                 };
 
-                let cache_name = if max_height > 0 {
-                    format!("page_{}_{}p.{}", page_index, max_height, final_ext)
-                } else {
-                    format!("page_{}.{}", page_index, final_ext)
-                };
+                let cache_name = format!("page_{}.{}", page_index, final_ext);
                 let _ = std::fs::write(cache_dir_owned.join(cache_name), &final_bytes);
             }
         }

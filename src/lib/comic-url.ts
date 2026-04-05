@@ -14,17 +14,13 @@ const PROTOCOL_BASE = IS_WINDOWS
  * 构造漫画页面图片 URL（Tauri 资源协议，零拷贝）
  * @param bookHash 漫画哈希值
  * @param pageIndex 页面索引
- * @param quality 图片质量
  * @returns 资源 URL
  */
 export function getPageUrl(
   bookHash: string,
-  pageIndex: number,
-  quality: "high" | "low" = "high"
+  pageIndex: number
 ): string {
-  // 低清参数用于低配模式下减少传输与解码压力
-  const qualityParam = quality === "low" ? "?quality=low" : "";
-  return `${PROTOCOL_BASE}/page/${bookHash}/${pageIndex}${qualityParam}`;
+  return `${PROTOCOL_BASE}/page/${bookHash}/${pageIndex}`;
 }
 
 /**

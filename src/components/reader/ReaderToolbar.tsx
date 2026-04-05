@@ -1,14 +1,7 @@
 import { useEffect, useRef } from "react";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AnimatePresence, motion } from "motion/react";
-import {
-  ArrowLeft,
-  Maximize,
-  Minimize,
-  Minus,
-  Square,
-  X,
-} from "lucide-react";
+import { ArrowLeft, Maximize, Minimize, Minus, Square, X } from "lucide-react";
 import type {
   ReaderDirectionOption,
   ReaderFitOption,

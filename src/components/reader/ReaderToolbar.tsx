@@ -130,19 +130,24 @@ export function ReaderToolbar({
             transition={{ duration: 0.25, ease: [0.16, 1, 0.3, 1] }}
             className="absolute bottom-0 left-0 right-0 z-50"
           >
-            <div className="reader-bottom-panel mx-4 mb-4 rounded-2xl bg-[#2a2a2c]/95 backdrop-blur-sm border border-white/[0.06]">
+            <div className="reader-bottom-panel mx-4 mb-4 border border-[var(--color-border-strong)]/70 bg-[#12100f]/96 backdrop-blur-md">
               <div className="flex items-center justify-between px-4 pt-3 pb-2">
-                <span className="text-[13px] text-white/80 truncate max-w-[60%] font-medium">
-                  {bookTitle}
-                </span>
-                <span className="text-[13px] text-white/50 tabular-nums font-medium">
+                <div className="min-w-0">
+                  <div className="text-[10px] uppercase tracking-[0.22em] text-white/35">
+                    Reader Session
+                  </div>
+                  <span className="mt-1 block max-w-[60vw] truncate text-[13px] font-medium text-white/82">
+                    {bookTitle}
+                  </span>
+                </div>
+                <span className="font-mono text-[13px] text-white/50 tabular-nums">
                   {displayPage + 1}/{totalPages}
                 </span>
               </div>
 
-              <div className="mx-4 border-t border-white/[0.06]" />
+              <div className="mx-4 border-t border-white/[0.08]" />
 
-              <div className="flex items-center justify-around px-2 py-2.5 relative">
+              <div className="relative flex items-center justify-around px-2 py-2.5">
                 <ReaderToolbarDropdown
                   icon={currentModeOption.icon}
                   label={currentModeOption.label}

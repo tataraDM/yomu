@@ -46,7 +46,7 @@ export function ReaderOverlay({
           {currentPage > 0 && (
             <button
               onClick={isRTL ? onNext : onPrev}
-              className="absolute left-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-colors opacity-0 hover:opacity-100"
+              className="absolute left-3 top-1/2 z-40 flex h-11 w-11 -translate-y-1/2 items-center justify-center border border-white/10 bg-black/35 transition-colors hover:bg-black/55"
               aria-label={isRTL ? "下一页" : "上一页"}
             >
               <ChevronLeft size={20} className="text-white" />
@@ -55,7 +55,7 @@ export function ReaderOverlay({
           {currentPage < totalPages - 1 && (
             <button
               onClick={isRTL ? onPrev : onNext}
-              className="absolute right-3 top-1/2 -translate-y-1/2 z-40 w-10 h-10 rounded-full bg-black/30 hover:bg-black/50 flex items-center justify-center transition-colors opacity-0 hover:opacity-100"
+              className="absolute right-3 top-1/2 z-40 flex h-11 w-11 -translate-y-1/2 items-center justify-center border border-white/10 bg-black/35 transition-colors hover:bg-black/55"
               aria-label={isRTL ? "上一页" : "下一页"}
             >
               <ChevronRight size={20} className="text-white" />

@@ -42,12 +42,12 @@ export function ReaderToolbarDropdown<T extends string>({
       <button
         onClick={disabled ? undefined : onToggle}
         disabled={disabled}
-        className={`flex flex-col items-center gap-1 px-3 py-1.5 rounded-lg transition-colors min-w-[56px] ${
+        className={`flex min-w-[60px] flex-col items-center gap-1 border px-3 py-2 transition-colors ${
           disabled
-            ? "text-white/20 cursor-not-allowed"
+            ? "border-transparent text-white/20 cursor-not-allowed"
             : open
-              ? "text-blue-400 bg-white/[0.08]"
-              : "text-white/60 hover:text-white/90 hover:bg-white/[0.06]"
+              ? "border-[rgba(200,155,99,0.42)] bg-[rgba(200,155,99,0.12)] text-[#f0ddc5]"
+              : "border-transparent text-white/60 hover:border-white/[0.08] hover:text-white/90 hover:bg-white/[0.04]"
         }`}
       >
         <Icon size={18} strokeWidth={1.5} />
@@ -61,7 +61,7 @@ export function ReaderToolbarDropdown<T extends string>({
             animate={{ opacity: 1, y: 0, scale: 1 }}
             exit={{ opacity: 0, y: 4, scale: 0.95 }}
             transition={{ duration: 0.15, ease: [0.16, 1, 0.3, 1] }}
-            className="absolute bottom-full left-1/2 -translate-x-1/2 mb-2 min-w-[120px] py-1 rounded-xl bg-[#3a3a3c] border border-white/[0.08] shadow-lg shadow-black/40 overflow-hidden z-[60]"
+            className="absolute bottom-full left-1/2 z-[60] mb-2 min-w-[132px] -translate-x-1/2 overflow-hidden border border-white/[0.08] bg-[#191716] py-1 shadow-lg shadow-black/40"
           >
             {options.map((opt) => {
               const OptIcon = opt.icon;
@@ -72,13 +72,13 @@ export function ReaderToolbarDropdown<T extends string>({
                   onClick={() => onChange(opt.value)}
                   className={`w-full flex items-center gap-2.5 px-3 py-2 text-[13px] transition-colors ${
                     isActive
-                      ? "text-blue-400 bg-white/[0.06]"
-                      : "text-white/70 hover:text-white hover:bg-white/[0.06]"
+                      ? "bg-[rgba(200,155,99,0.1)] text-[#f0ddc5]"
+                      : "text-white/70 hover:bg-white/[0.06] hover:text-white"
                   }`}
                 >
                   <OptIcon size={16} strokeWidth={1.5} />
                   <span>{opt.label}</span>
-                  {isActive && <span className="ml-auto text-blue-400 text-xs">✓</span>}
+                  {isActive && <span className="ml-auto text-[11px] text-[#f0ddc5]">✓</span>}
                 </button>
               );
             })}

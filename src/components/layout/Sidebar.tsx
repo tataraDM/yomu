@@ -38,45 +38,69 @@ export function Sidebar({ collapsed }: SidebarProps) {
   if (collapsed) return null;
 
   return (
-    <aside className="flex flex-col w-[220px] min-w-[220px] h-full bg-bg-surface border-r border-border shrink-0">
+    <aside className="flex h-full min-w-[248px] w-[248px] shrink-0 flex-col border-r border-[var(--color-border-strong)]/80 bg-[#0b0b0b]">
+      <div className="section-rule px-5 py-5">
+        <div className="data-label mb-3">Library Index</div>
+        <div className="text-[28px] font-semibold tracking-[0.08em] text-text-primary uppercase">
+          Shelf
+        </div>
+        <p className="mt-2 max-w-[180px] text-sm leading-6 text-text-secondary">
+          以更清晰的分区与目录感管理你的本地图书收藏。
+        </p>
+      </div>
+
       {/* 导航菜单 */}
-      <nav className="flex-1 py-4">
-        <div className="space-y-0.5">
-          {navItems.map((item) => (
+      <nav className="flex-1 px-3 py-4">
+        <div className="mb-3 px-2 text-[11px] uppercase tracking-[0.24em] text-text-tertiary">
+          Sections
+        </div>
+        <div className="space-y-1.5">
+          {navItems.map((item, index) => (
             <Link
               key={item.label}
               to={item.to}
               search={item.search}
-              className="flex items-center gap-[10px] px-5 py-2 text-sm text-text-secondary hover:bg-bg-hover transition-colors duration-150"
+              className="group flex items-center justify-between gap-3 border border-transparent px-3 py-3 text-sm text-text-secondary transition-all duration-150 hover:border-border hover:bg-bg-hover hover:text-text-primary"
               activeProps={{
-                className: "!text-accent !font-semibold !bg-accent-light/20",
+                className: "!border-[var(--color-accent-border)] !bg-accent-light !text-text-primary",
               }}
             >
-              <item.icon size={18} className="opacity-70 shrink-0" />
-              <span>{item.label}</span>
+              <div className="flex items-center gap-3 min-w-0">
+                <item.icon size={17} className="shrink-0 opacity-80" />
+                <span>{item.label}</span>
+              </div>
+              <span className="font-mono text-[11px] text-text-tertiary group-hover:text-text-secondary">
+                0{index + 1}
+              </span>
             </Link>
           ))}
         </div>
       </nav>
 
-      {/* 分割线 */}
-      <div className="mx-5 border-t border-border" />
-
       {/* 底部功能项 */}
-      <div className="py-4 space-y-0.5">
-        {bottomItems.map((item) => (
-          <Link
-            key={item.label}
-            to={item.to}
-            className="flex items-center gap-[10px] px-5 py-2 text-sm text-text-secondary hover:bg-bg-hover transition-colors duration-150"
-            activeProps={{
-              className: "!text-accent !font-semibold !bg-accent-light/20",
-            }}
-          >
-            <item.icon size={18} className="opacity-70 shrink-0" />
-            <span>{item.label}</span>
-          </Link>
-        ))}
+      <div className="section-rule px-3 py-4">
+        <div className="mb-3 px-2 text-[11px] uppercase tracking-[0.24em] text-text-tertiary">
+          Utilities
+        </div>
+        <div className="space-y-1.5">
+          {bottomItems.map((item) => (
+            <Link
+              key={item.label}
+              to={item.to}
+              className="flex items-center gap-3 border border-transparent px-3 py-3 text-sm text-text-secondary transition-all duration-150 hover:border-border hover:bg-bg-hover hover:text-text-primary"
+              activeProps={{
+                className: "!border-[var(--color-accent-border)] !bg-accent-light !text-text-primary",
+              }}
+            >
+              <item.icon size={17} className="shrink-0 opacity-80" />
+              <span>{item.label}</span>
+            </Link>
+          ))}
+        </div>
+      </div>
+
+      <div className="px-5 py-4 text-[11px] uppercase tracking-[0.2em] text-text-muted">
+        Yomu / Local Archive
       </div>
     </aside>
   );

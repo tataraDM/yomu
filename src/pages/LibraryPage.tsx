@@ -88,32 +88,52 @@ export function LibraryPage() {
   });
 
   return (
-    <div>
+    <div className="space-y-8">
       {/* 头部区域 */}
-      <div className="flex items-center justify-between mb-6">
-        <h1 className="text-xl font-semibold text-text-primary">书架</h1>
-        <div className="flex items-center gap-3 text-xs text-text-tertiary">
-          {scanning && <span className="text-accent">扫描中...</span>}
-          <span>{books.length} 本</span>
+      <div className="section-rule flex flex-wrap items-end justify-between gap-6 pb-6">
+        <div className="space-y-3">
+          <div className="data-label">Local Archive</div>
+          <h1 className="text-4xl font-semibold uppercase tracking-[0.08em] text-text-primary">
+            书架
+          </h1>
+          <p className="max-w-2xl text-sm leading-7 text-text-secondary">
+            以档案目录的方式浏览本地漫画与电子书，保持快速检索、阅读续接与收藏管理。
+          </p>
+        </div>
+        <div className="grid min-w-[260px] grid-cols-2 gap-px overflow-hidden border border-border bg-border text-right">
+          <div className="bg-bg-surface-2 px-4 py-3">
+            <div className="data-label">Volumes</div>
+            <div className="data-value mt-2 text-2xl font-semibold">{books.length}</div>
+          </div>
+          <div className="bg-bg-surface-2 px-4 py-3">
+            <div className="data-label">Status</div>
+            <div className="data-value mt-2 text-sm font-medium uppercase tracking-[0.16em] text-accent">
+              {scanning ? "Scanning" : "Idle"}
+            </div>
+          </div>
         </div>
       </div>
 
       {/* 书籍网格 */}
       {loading ? (
-        // 骨架屏加载状态
         <div className="grid grid-cols-[repeat(auto-fill,160px)] gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="w-[160px]">
-              <div className="w-full aspect-[2/3] skeleton rounded-[var(--radius-md)]" />
-              <div className="mt-2 h-[14px] w-[80%] skeleton rounded" />
-              <div className="mt-1 h-[12px] w-[50%] skeleton rounded" />
+              <div className="panel-frame w-full aspect-[2/3] skeleton rounded-[22px]" />
+              <div className="mt-3 h-[14px] w-[78%] skeleton rounded" />
+              <div className="mt-2 h-[12px] w-[46%] skeleton rounded" />
             </div>
           ))}
         </div>
       ) : sortedBooks.length === 0 ? (
-        // 空状态
-        <div className="flex flex-col items-center justify-center py-24 gap-6">
-          <div className="text-text-tertiary text-sm">还没有添加任何书籍</div>
+        <div className="panel-frame surface-grid flex min-h-[420px] flex-col items-center justify-center gap-8 rounded-[var(--radius-lg)] px-8 py-16 text-center">
+          <div>
+            <div className="data-label mb-3">Empty Archive</div>
+            <div className="text-2xl font-semibold text-text-primary">还没有添加任何书籍</div>
+            <p className="mx-auto mt-3 max-w-md text-sm leading-7 text-text-secondary">
+              选择一个本地漫画或电子书目录，Yomu 会为你建立可继续阅读的个人书库索引。
+            </p>
+          </div>
           <AddLibraryCard onClick={handleAddLibrary} disabled={scanning} />
         </div>
       ) : (

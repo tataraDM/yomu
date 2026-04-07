@@ -13,16 +13,16 @@ export function AppShell() {
   const sidebarCollapsed = useSettingsStore((s) => s.sidebarCollapsed);
 
   return (
-    <div className="flex flex-col h-screen bg-bg-base overflow-hidden">
+    <div className="surface-grid flex h-screen flex-col overflow-hidden bg-bg-base text-text-primary">
       {/* 顶部标题栏 */}
       <TitleBar />
-      <div className="flex flex-1 overflow-hidden">
+      <div className="flex flex-1 overflow-hidden border-t border-[var(--color-border-strong)]/70">
         {/* 侧边栏 */}
         <Sidebar collapsed={sidebarCollapsed} />
-        
+
         {/* 主内容区域 */}
-        <main className="flex-1 overflow-y-auto p-6">
-          <div className="bg-bg-surface rounded-[var(--radius-lg)] shadow-[var(--shadow-md)] min-h-full p-6">
+        <main className="flex-1 overflow-y-auto bg-transparent p-4 md:p-5">
+          <div className="panel-frame min-h-full rounded-[var(--radius-lg)] p-5 md:p-7">
             {/* 路由内容出口（带过渡动画） */}
             <AnimatedOutlet />
           </div>

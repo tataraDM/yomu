@@ -12,37 +12,40 @@ const appWindow = getCurrentWindow();
 export function TitleBar() {
   return (
     <div
-      className="drag-region flex items-center justify-between h-12 px-4 bg-bg-surface border-b border-border select-none shrink-0"
+      className="drag-region section-rule flex h-12 shrink-0 items-center justify-between border-b border-[var(--color-border-strong)]/80 bg-[#0a0a0a]/92 px-4 select-none backdrop-blur-md"
     >
       {/* 应用标题 */}
-      <div className="flex items-center gap-2">
-        <span className="text-sm font-semibold text-text-primary tracking-wide">
+      <div className="flex items-center gap-3">
+        <span className="text-[11px] font-medium uppercase tracking-[0.28em] text-text-tertiary">
+          Archive Reader
+        </span>
+        <span className="text-sm font-semibold tracking-[0.18em] text-text-primary uppercase">
           Yomu
         </span>
       </div>
 
       {/* 窗口控制按钮 */}
-      <div className="no-drag flex items-center">
+      <div className="no-drag flex items-center border-l border-border pl-2">
         <button
           onClick={() => appWindow.minimize()}
-          className="inline-flex items-center justify-center w-11 h-8 hover:bg-bg-hover transition-colors duration-[var(--duration-fast)]"
+          className="inline-flex h-8 w-11 items-center justify-center transition-colors duration-[var(--duration-fast)] hover:bg-bg-hover"
           aria-label="最小化"
         >
           <Minus size={14} className="text-text-secondary" />
         </button>
         <button
           onClick={() => appWindow.toggleMaximize()}
-          className="inline-flex items-center justify-center w-11 h-8 hover:bg-bg-hover transition-colors duration-[var(--duration-fast)]"
+          className="inline-flex h-8 w-11 items-center justify-center transition-colors duration-[var(--duration-fast)] hover:bg-bg-hover"
           aria-label="最大化"
         >
           <Square size={12} className="text-text-secondary" />
         </button>
         <button
           onClick={() => appWindow.close()}
-          className="inline-flex items-center justify-center w-11 h-8 hover:bg-red-500/10 transition-colors duration-[var(--duration-fast)] group"
+          className="group inline-flex h-8 w-11 items-center justify-center transition-colors duration-[var(--duration-fast)] hover:bg-[#4a1f1f]"
           aria-label="关闭"
         >
-          <X size={14} className="text-text-secondary group-hover:text-red-500" />
+          <X size={14} className="text-text-secondary group-hover:text-[#ffb4a8]" />
         </button>
       </div>
     </div>

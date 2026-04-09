@@ -31,4 +31,6 @@ sha2 = "0.10"
 walkdir = "2"
 natord = "1.0"
 mobi = "0.8"
+unrar = "0.5"
+sevenz-rust = "0.6"
 reqwest = { version = "=0.12.28", features = ["rustls-tls"], default-features = false }

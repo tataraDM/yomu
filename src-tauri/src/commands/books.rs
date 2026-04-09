@@ -34,5 +34,10 @@ pub async fn save_reading_progress(
     page_index: i64,
 ) -> Result<(), String> {
     let db = state.0.lock().map_err(|e| e.to_string())?;
-    db::save_progress(&db, &hash, page_index).map_err(|e| e.to_string())
+    let affected = db::save_progress(&db, &hash, page_index).map_err(|e| e.to_string())?;
+    if affected == 0 {
+        // 书不在库（可能已被重扫清理）——告诉前端保存未落库
+        return Err("Book not found or removed".to_string());
+    }
+    Ok(())
 }

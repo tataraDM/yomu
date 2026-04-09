@@ -15,6 +15,9 @@ pub struct Book {
     pub read_progress: i64,
     pub is_favorite: bool,
     pub added_at: i64,
+    /// 系列名：若该书与父文件夹同名（或以父文件夹名开头），
+    /// 则记录父文件夹名，用于前端按系列折叠展示。
+    pub series_name: Option<String>,
 }
 
 /// 库模型

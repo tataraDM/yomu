@@ -9,6 +9,10 @@ pub struct ScannedBook {
     pub hash: String,
     pub page_count: i64,
     pub format: BookFormat,
+    /// 系列名：若父文件夹有意义地"冠名"了这本书（文件名以父文件夹名为前缀），
+    /// 则记录父文件夹名，用于前端折叠展示。
+    /// 只有同一目录里至少有 2 本"冠名书"时才会被置为 Some，避免单本书被单独归为一个系列。
+    pub series_name: Option<String>,
 }
 
 /// 支持的书籍格式

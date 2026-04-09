@@ -51,3 +51,28 @@ pub fn update_library_scan_time(db: &Connection, library_id: i64) -> Result<(), 
     )?;
     Ok(())
 }
+
+/// 获取某个库里未被删除的书数量
+pub fn get_library_book_count(db: &Connection, library_id: i64) -> Result<i64, Box<dyn std::error::Error>> {
+    let count: i64 = db.query_row(
+        "SELECT COUNT(*) FROM books WHERE library_id = ?1 AND is_removed = 0",
+        rusqlite::params![library_id],
+        |row| row.get(0),
+    )?;
+    Ok(count)
+}
+
+/// 删除一个库及其所有书籍记录
+/// 物理删除：一并删除 books 表中 library_id 指向该库的所有行。
+/// 注意：不会删除磁盘上的书籍文件本身。
+pub fn remove_library(db: &Connection, library_id: i64) -> Result<(), Box<dyn std::error::Error>> {
+    db.execute(
+        "DELETE FROM books WHERE library_id = ?1",
+        rusqlite::params![library_id],
+    )?;
+    db.execute(
+        "DELETE FROM libraries WHERE id = ?1",
+        rusqlite::params![library_id],
+    )?;
+    Ok(())
+}

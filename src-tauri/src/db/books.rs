@@ -5,7 +5,7 @@ use super::models::Book;
 /// 获取所有未被标记为删除的书籍
 pub fn get_all_books(db: &Connection) -> Result<Vec<Book>, Box<dyn std::error::Error>> {
     let mut stmt = db.prepare(
-        "SELECT id, library_id, hash, title, path, file_size, page_count, cover_path, format, read_progress, is_favorite, added_at
+        "SELECT id, library_id, hash, title, path, file_size, page_count, cover_path, format, read_progress, is_favorite, added_at, series_name
          FROM books WHERE is_removed = 0 ORDER BY title ASC"
     )?;
 
@@ -23,6 +23,7 @@ pub fn get_all_books(db: &Connection) -> Result<Vec<Book>, Box<dyn std::error::E
             read_progress: row.get(9)?,
             is_favorite: row.get::<_, i64>(10)? != 0,
             added_at: row.get(11)?,
+            series_name: row.get(12)?,
         })
     })?.collect::<Result<Vec<_>, _>>()?;
 
@@ -30,6 +31,7 @@ pub fn get_all_books(db: &Connection) -> Result<Vec<Book>, Box<dyn std::error::E
 }
 
 /// 插入或更新书籍记录。返回书籍 ID。
+#[allow(clippy::too_many_arguments)]
 pub fn upsert_book(
     db: &Connection,
     library_id: i64,
@@ -40,10 +42,11 @@ pub fn upsert_book(
     page_count: i64,
     cover_path: &str,
     format: &str,
+    series_name: Option<&str>,
 ) -> Result<i64, Box<dyn std::error::Error>> {
     db.execute(
-        "INSERT INTO books (library_id, hash, title, path, file_size, page_count, cover_path, format)
-         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8)
+        "INSERT INTO books (library_id, hash, title, path, file_size, page_count, cover_path, format, series_name)
+         VALUES (?1, ?2, ?3, ?4, ?5, ?6, ?7, ?8, ?9)
          ON CONFLICT(hash) DO UPDATE SET
             library_id = excluded.library_id,
             title = excluded.title,
@@ -52,9 +55,10 @@ pub fn upsert_book(
             page_count = excluded.page_count,
             cover_path = excluded.cover_path,
             format = excluded.format,
+            series_name = excluded.series_name,
             is_removed = 0,
             updated_at = unixepoch()",
-        rusqlite::params![library_id, hash, title, path, file_size, page_count, cover_path, format],
+        rusqlite::params![library_id, hash, title, path, file_size, page_count, cover_path, format, series_name],
     )?;
 
     let id: i64 = db.query_row(
@@ -69,7 +73,7 @@ pub fn upsert_book(
 /// 根据哈希值获取单本书籍
 pub fn get_book_by_hash(db: &Connection, hash: &str) -> Result<Book, Box<dyn std::error::Error>> {
     let book = db.query_row(
-        "SELECT id, library_id, hash, title, path, file_size, page_count, cover_path, format, read_progress, is_favorite, added_at
+        "SELECT id, library_id, hash, title, path, file_size, page_count, cover_path, format, read_progress, is_favorite, added_at, series_name
          FROM books WHERE hash = ?1 AND is_removed = 0",
         rusqlite::params![hash],
         |row| {
@@ -86,6 +90,7 @@ pub fn get_book_by_hash(db: &Connection, hash: &str) -> Result<Book, Box<dyn std
                 read_progress: row.get(9)?,
                 is_favorite: row.get::<_, i64>(10)? != 0,
                 added_at: row.get(11)?,
+                series_name: row.get(12)?,
             })
         },
     )?;
@@ -94,10 +99,11 @@ pub fn get_book_by_hash(db: &Connection, hash: &str) -> Result<Book, Box<dyn std
 
 /// 保存书籍的阅读进度
 /// 同时刷新 `updated_at`，便于后续按最近活动排序或同步状态。
-pub fn save_progress(db: &Connection, hash: &str, page_index: i64) -> Result<(), Box<dyn std::error::Error>> {
-    db.execute(
+/// 返回受影响行数；调用方可据此判断书是否还在库中。
+pub fn save_progress(db: &Connection, hash: &str, page_index: i64) -> Result<usize, Box<dyn std::error::Error>> {
+    let affected = db.execute(
         "UPDATE books SET read_progress = ?1, updated_at = unixepoch() WHERE hash = ?2 AND is_removed = 0",
         rusqlite::params![page_index, hash],
     )?;
-    Ok(())
+    Ok(affected)
 }

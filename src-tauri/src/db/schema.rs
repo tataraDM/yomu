@@ -37,6 +37,7 @@ pub fn init_db(db_path: &PathBuf) -> Result<Connection, Box<dyn std::error::Erro
             page_count    INTEGER,
             cover_path    TEXT,
             format        TEXT NOT NULL DEFAULT 'cbz',
+            series_name   TEXT,
             read_progress INTEGER DEFAULT 0,
             is_favorite   INTEGER DEFAULT 0,
             is_removed    INTEGER DEFAULT 0,
@@ -80,6 +81,18 @@ pub fn init_db(db_path: &PathBuf) -> Result<Connection, Box<dyn std::error::Erro
     if !has_format {
         db.execute_batch("ALTER TABLE books ADD COLUMN format TEXT NOT NULL DEFAULT 'cbz';")?;
         log::info!("Migration: added 'format' column to books table");
+    }
+
+    // 迁移：如果不存在则添加 series_name 列（用于系列折叠）
+    let has_series_name: bool = db
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('books') WHERE name = 'series_name'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_series_name {
+        db.execute_batch("ALTER TABLE books ADD COLUMN series_name TEXT;")?;
+        log::info!("Migration: added 'series_name' column to books table");
     }
 
     log::info!("Database initialized at {:?}", db_path);

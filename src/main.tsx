@@ -3,6 +3,7 @@ import React from "react";
 import ReactDOM from "react-dom/client";
 import { RouterProvider, createRouter } from "@tanstack/react-router";
 import { routeTree } from "./routeTree.gen";
+import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow, currentMonitor, LogicalSize, LogicalPosition } from "@tauri-apps/api/window";
 import "./styles/globals.css";
 
@@ -54,8 +55,16 @@ async function adjustWindowSize() {
   }
 }
 
+/** 启动时清理磁盘缓存（上限 2GB），防止无限膨胀（修 P0-3） */
+function cleanupCacheOnStartup() {
+  invoke("cleanup_cache", { maxBytes: 2 * 1024 * 1024 * 1024 }).catch(() => {
+    // 静默忽略 — 缓存清理非阻塞性操作
+  });
+}
+
 // 先调整窗口，再渲染应用
 adjustWindowSize().finally(() => {
+  cleanupCacheOnStartup();
   ReactDOM.createRoot(document.getElementById("root")!).render(
     <React.StrictMode>
       <RouterProvider router={router} />

@@ -28,7 +28,6 @@ rusqlite = { version = "0.34", features = ["bundled"] }
 zip = "2"
 image = "0.25"
 webp = "0.3"
-notify = "7"
 sha2 = "0.10"
 walkdir = "2"
 natord = "1.0"

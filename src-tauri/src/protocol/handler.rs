@@ -74,10 +74,10 @@ fn handle_page(app: &tauri::AppHandle, book_hash: &str, page_index: usize) -> Re
     };
 
     let hash_owned = book_hash.to_string();
-    let result = std::thread::spawn(move || {
+    // 直接在当前线程执行，用 catch_unwind 隔离 panic（替代之前每次 spawn+join 的开销）
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
         extract_and_maybe_transcode(&book_info, &hash_owned, page_index, &cache_dir)
-    })
-    .join();
+    }));
 
     match result {
         Ok(Ok((bytes, mime))) => build_image_response(bytes, &mime),
@@ -85,6 +85,6 @@ fn handle_page(app: &tauri::AppHandle, book_hash: &str, page_index: usize) -> Re
             log::warn!("Failed to extract page {} from {}: {}", page_index, book_hash, e);
             error_response(500, "Failed to extract page")
         }
-        Err(_) => error_response(500, "Thread panicked"),
+        Err(_) => error_response(500, "Extract panicked"),
     }
 }

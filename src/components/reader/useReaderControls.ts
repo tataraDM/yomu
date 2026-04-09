@@ -34,6 +34,13 @@ export function useReaderControls({
   const [isFullscreen, setIsFullscreen] = useState(false);
   const [openMenu, setOpenMenu] = useState<"mode" | "dir" | "fit" | null>(null);
 
+  // 当 bookId 或 initialPage 变化时重置页码（修 P1-9：防深链跳转时 state 残留）
+  useEffect(() => {
+    setCurrentPage(initialPage);
+    setPreviewPage(null);
+    setSlideDirection("none");
+  }, [bookId, initialPage]);
+
   const containerRef = useRef<HTMLDivElement>(null);
   const currentPageRef = useRef(initialPage);
   const isDraggingSlider = useRef(false);
@@ -196,7 +203,8 @@ export function useReaderControls({
 
     const handleUserGesture = () => {
       if (isExternalNavRef.current) {
-        container.scrollTop = container.scrollTop;
+        // 用户主动手势介入 → 打断外部导航的平滑滚动，立即交还控制权
+        container.scrollTo({ top: container.scrollTop, behavior: "instant" as ScrollBehavior });
         isExternalNavRef.current = false;
       }
     };
@@ -275,12 +283,12 @@ export function useReaderControls({
   }, []);
 
   const handleBack = useCallback(async () => {
-    invoke("save_reading_progress", { hash: bookId, pageIndex: currentPage }).catch(() => {});
+    // 进度由 unmount cleanup 统一保存，这里不重复调用（修 P1-10）
     const win = getCurrentWindow();
     const fs = await win.isFullscreen().catch(() => false);
     if (fs) await win.setFullscreen(false).catch(() => {});
     navigate({ to: "/library" });
-  }, [bookId, currentPage, navigate]);
+  }, [navigate]);
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {

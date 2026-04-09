@@ -1,6 +1,7 @@
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import { AnimatePresence, motion } from "motion/react";
-import { ArrowLeft, Maximize, Minimize, Minus, Square, X } from "lucide-react";
+import { ArrowLeft, Maximize, Minimize } from "lucide-react";
+import { WindowControls } from "@/components/layout/WindowControls";
 import { ReaderToolbarDropdown } from "./ReaderToolbarDropdown";
 import type {
   ReaderDirectionOption,
@@ -97,27 +98,7 @@ export function ReaderToolbar({
                 >
                   {isFullscreen ? <Minimize size={22} /> : <Maximize size={22} />}
                 </button>
-                <button
-                  onClick={() => getCurrentWindow().minimize()}
-                  className="inline-flex items-center justify-center w-12 h-12 text-white/70 hover:text-white hover:bg-white/15 rounded-full transition-colors"
-                  aria-label="最小化"
-                >
-                  <Minus size={22} />
-                </button>
-                <button
-                  onClick={() => getCurrentWindow().toggleMaximize()}
-                  className="inline-flex items-center justify-center w-12 h-12 text-white/70 hover:text-white hover:bg-white/15 rounded-full transition-colors"
-                  aria-label="最大化"
-                >
-                  <Square size={16} />
-                </button>
-                <button
-                  onClick={() => getCurrentWindow().close()}
-                  className="inline-flex items-center justify-center w-12 h-12 text-white/70 hover:text-red-400 hover:bg-red-500/20 rounded-full transition-colors"
-                  aria-label="关闭"
-                >
-                  <X size={22} />
-                </button>
+                <WindowControls />
               </div>
             </div>
           </motion.div>

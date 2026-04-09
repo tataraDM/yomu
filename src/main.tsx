@@ -51,9 +51,14 @@ async function adjustWindowSize() {
     const x = Math.round((screenW - w) / 2);
     const y = Math.round((screenH - h) / 2);
     await win.setPosition(new LogicalPosition(Math.max(0, x), Math.max(0, y)));
+
+    // 窗口初始 visible=false，调整完尺寸后再显示（修 P2-5 启动闪烁）
+    await win.show();
   } catch (e) {
     console.error("Failed to adjust window size:", e);
     logger.error("Failed to adjust window size", e);
+    // 即使调整失败也要显示窗口
+    try { await getCurrentWindow().show(); } catch { /* ignore */ }
   }
 }
 

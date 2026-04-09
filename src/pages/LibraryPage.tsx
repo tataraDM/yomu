@@ -5,25 +5,10 @@ import { open } from "@tauri-apps/plugin-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { Route } from "@/routes/library";
 import { logger } from "@/lib/logger";
+import type { Book } from "@/lib/types";
 import { BookCoverCard } from "@/components/BookCoverCard";
 import { AddLibraryCard } from "@/components/AddLibraryCard";
 import { ChevronRight } from "lucide-react";
-
-interface Book {
-  id: number;
-  library_id: number | null;
-  hash: string;
-  title: string;
-  path: string;
-  file_size: number | null;
-  page_count: number | null;
-  cover_path: string | null;
-  format: string;
-  read_progress: number;
-  is_favorite: boolean;
-  added_at: number;
-  series_name: string | null;
-}
 
 /** 系列分组 */
 interface SeriesGroup {

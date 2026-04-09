@@ -1,10 +1,7 @@
 /** 标题栏组件 */
-import { getCurrentWindow } from "@tauri-apps/api/window";
-import { Minus, PanelLeftClose, PanelLeftOpen, Square, X } from "lucide-react";
+import { PanelLeftClose, PanelLeftOpen } from "lucide-react";
 import { useSettingsStore } from "@/stores/settings";
-
-// 获取当前窗口实例，避免每次渲染时重复创建句柄
-const appWindow = getCurrentWindow();
+import { WindowControls } from "./WindowControls";
 
 /**
  * 标题栏组件
@@ -40,29 +37,7 @@ export function TitleBar() {
       </div>
 
       {/* 窗口控制按钮 */}
-      <div className="no-drag flex items-center border-l border-border pl-2">
-        <button
-          onClick={() => appWindow.minimize()}
-          className="inline-flex h-8 w-11 items-center justify-center transition-colors duration-[var(--duration-fast)] hover:bg-bg-hover"
-          aria-label="最小化"
-        >
-          <Minus size={14} className="text-text-secondary" />
-        </button>
-        <button
-          onClick={() => appWindow.toggleMaximize()}
-          className="inline-flex h-8 w-11 items-center justify-center transition-colors duration-[var(--duration-fast)] hover:bg-bg-hover"
-          aria-label="最大化"
-        >
-          <Square size={12} className="text-text-secondary" />
-        </button>
-        <button
-          onClick={() => appWindow.close()}
-          className="group inline-flex h-8 w-11 items-center justify-center transition-colors duration-[var(--duration-fast)] hover:bg-[#4a1f1f]"
-          aria-label="关闭"
-        >
-          <X size={14} className="text-text-secondary group-hover:text-[#ffb4a8]" />
-        </button>
-      </div>
+      <WindowControls className="border-l border-border pl-2" />
     </div>
   );
 }

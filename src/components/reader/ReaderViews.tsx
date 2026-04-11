@@ -1,4 +1,4 @@
-import { useCallback, useEffect, useMemo, useRef, forwardRef } from "react";
+import { useEffect, useMemo, useRef, forwardRef } from "react";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReadingDirection, FitMode } from "@/stores/settings";
@@ -15,31 +15,68 @@ interface ReaderScrollViewProps {
   initialPage: number;
   scrollToPage: number;
   scrollRequestId: number;
+  onVisiblePageChange: (page: number) => void;
 }
 
 /** 卷轴模式视图：用 react-virtuoso 虚拟化渲染，只在视口附近创建 DOM 节点（修 P0-1） */
 export const ReaderScrollView = forwardRef<HTMLDivElement, ReaderScrollViewProps>(
-  function ReaderScrollView({ bookHash, totalPages, fitMode, initialPage, scrollToPage, scrollRequestId }, ref) {
+  function ReaderScrollView({ bookHash, totalPages, fitMode, initialPage, scrollToPage, scrollRequestId, onVisiblePageChange }, ref) {
     const virtuosoRef = useRef<VirtuosoHandle>(null);
     const scrollerRef = useRef<HTMLDivElement | null>(null);
-
-    // 初始定位
-    useEffect(() => {
-      if (initialPage > 0 && virtuosoRef.current) {
-        virtuosoRef.current.scrollToIndex({ index: initialPage, align: "start", behavior: "auto" });
-      }
-    }, [initialPage]);
+    const mountedInitialPageRef = useRef(initialPage);
+    const handledScrollRequestIdRef = useRef(0);
 
     // 外部跳转请求（slider 等）
     useEffect(() => {
-      if (scrollRequestId === 0) return;
-      virtuosoRef.current?.scrollToIndex({ index: scrollToPage, align: "start", behavior: "smooth" });
+      if (scrollRequestId === 0 || handledScrollRequestIdRef.current === scrollRequestId) return;
+      handledScrollRequestIdRef.current = scrollRequestId;
+      virtuosoRef.current?.scrollToIndex({ index: scrollToPage, align: "start", behavior: "auto" });
     }, [scrollRequestId, scrollToPage]);
+
+    useEffect(() => {
+      const scroller = scrollerRef.current;
+      if (!scroller) return;
+
+      let rafId = 0;
+      const syncVisiblePage = () => {
+        cancelAnimationFrame(rafId);
+        rafId = requestAnimationFrame(() => {
+          const pages = Array.from(scroller.querySelectorAll<HTMLElement>("[data-page-index]"));
+          if (pages.length === 0) return;
+
+          const viewportTop = scroller.getBoundingClientRect().top;
+          const anchorY = viewportTop + scroller.clientHeight / 3;
+          let closestPage = Number(pages[0]?.dataset.pageIndex ?? 0);
+          let minDistance = Infinity;
+
+          for (const page of pages) {
+            const pageIndex = Number(page.dataset.pageIndex);
+            if (isNaN(pageIndex)) continue;
+            const rect = page.getBoundingClientRect();
+            const distance = Math.abs(rect.top - anchorY);
+            if (distance < minDistance) {
+              minDistance = distance;
+              closestPage = pageIndex;
+            }
+          }
+
+          onVisiblePageChange(closestPage);
+        });
+      };
+
+      syncVisiblePage();
+      scroller.addEventListener("scroll", syncVisiblePage, { passive: true });
+      return () => {
+        scroller.removeEventListener("scroll", syncVisiblePage);
+        cancelAnimationFrame(rafId);
+      };
+    }, [onVisiblePageChange]);
 
     return (
       <Virtuoso
         ref={virtuosoRef}
         totalCount={totalPages}
+        initialTopMostItemIndex={mountedInitialPageRef.current}
         overscan={800}
         scrollerRef={(el) => {
           if (el instanceof HTMLDivElement) {

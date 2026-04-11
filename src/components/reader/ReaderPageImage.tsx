@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { getPageUrl } from "@/lib/comic-url";
 import type { ReadingMode, FitMode } from "@/stores/settings";
 
@@ -10,31 +10,49 @@ interface ReaderPageImageProps {
   lazy?: boolean;
 }
 
+const loadedImageCache = new Set<string>();
+const imageSizeCache = new Map<string, { w: number; h: number }>();
+
 function getImageClasses(mode: ReadingMode, fitMode: FitMode, loaded: boolean): string {
-  const opacityCls = `transition-opacity duration-150 ${loaded ? "opacity-100" : "opacity-0"}`;
+  const opacityCls = mode === "scroll"
+    ? loaded ? "opacity-100" : "opacity-0"
+    : `transition-opacity duration-150 ${loaded ? "opacity-100" : "opacity-0"}`;
 
   if (mode === "scroll") {
-    return `w-full h-auto ${opacityCls}`;
+    return `block w-full h-auto ${opacityCls}`;
   }
 
   switch (fitMode) {
     case "width":
-      return `w-full h-auto ${opacityCls}`;
+      return `block w-full h-auto ${opacityCls}`;
     case "contain":
-      return `max-h-full max-w-full object-contain ${opacityCls}`;
+      return `block max-h-full max-w-full object-contain ${opacityCls}`;
     case "height":
     default:
-      return `h-full w-auto ${opacityCls}`;
+      return `block h-full w-auto ${opacityCls}`;
   }
 }
 
 /** 单页/卷轴模式下的页面图片渲染组件 */
 export function ReaderPageImage({ bookHash, pageIndex, mode, fitMode, lazy }: ReaderPageImageProps) {
-  const [loaded, setLoaded] = useState(false);
-  const [error, setError] = useState(false);
-
   const url = getPageUrl(bookHash, pageIndex);
+  const [loaded, setLoaded] = useState(() => loadedImageCache.has(url));
+  const [error, setError] = useState(false);
+  const [imageSize, setImageSize] = useState<{ w: number; h: number } | null>(() => imageSizeCache.get(url) ?? null);
+
+  useEffect(() => {
+    setLoaded(loadedImageCache.has(url));
+    setError(false);
+    setImageSize(imageSizeCache.get(url) ?? null);
+  }, [url]);
+
   const imgClasses = getImageClasses(mode, fitMode, loaded);
+  const wrapperStyle = useMemo<React.CSSProperties | undefined>(() => {
+    if (mode !== "scroll" || !imageSize || imageSize.w === 0 || imageSize.h === 0) return undefined;
+    return {
+      aspectRatio: `${imageSize.w} / ${imageSize.h}`,
+    };
+  }, [mode, imageSize]);
 
   if (error) {
     return (
@@ -54,13 +72,19 @@ export function ReaderPageImage({ bookHash, pageIndex, mode, fitMode, lazy }: Re
         : "relative h-full w-full flex items-center justify-center";
 
   return (
-    <div className={containerCls}>
+    <div className={containerCls} style={wrapperStyle}>
       <img
         src={url}
         alt={`Page ${pageIndex + 1}`}
         loading={loadingAttr}
         className={imgClasses}
-        onLoad={() => setLoaded(true)}
+        onLoad={(e) => {
+          const nextSize = { w: e.currentTarget.naturalWidth, h: e.currentTarget.naturalHeight };
+          imageSizeCache.set(url, nextSize);
+          setImageSize(nextSize);
+          loadedImageCache.add(url);
+          setLoaded(true);
+        }}
         onError={() => setError(true)}
         draggable={false}
       />

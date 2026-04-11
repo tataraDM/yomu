@@ -45,10 +45,10 @@ export function useReaderControls({
   const currentPageRef = useRef(initialPage);
   const isDraggingSlider = useRef(false);
   const sliderCommitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const isExternalNavRef = useRef(false);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedPageRef = useRef(initialPage);
   const wheelCooldown = useRef(false);
+  const savedWindowBounds = useRef<{ x: number; y: number; w: number; h: number } | null>(null);
 
   const isRTL = direction === "rtl";
   const isWidthFit = fitMode === "width" && mode !== "scroll";
@@ -84,6 +84,23 @@ export function useReaderControls({
     currentPageRef.current = currentPage;
   }, [currentPage]);
 
+  const handleVisiblePageChange = useCallback(
+    (page: number) => {
+      if (page < 0 || page >= totalPages) return;
+      if (page === currentPageRef.current) return;
+      currentPageRef.current = page;
+      setCurrentPage(page);
+      saveProgress(page);
+    },
+    [totalPages, saveProgress]
+  );
+
+  useEffect(() => {
+    if (mode === "scroll") {
+      setScrollRequestId((id) => id + 1);
+    }
+  }, [mode]);
+
   const navigateToPage = useCallback(
     (targetPage: number, source: "button" | "slider" | "keyboard" = "button") => {
       if (targetPage < 0 || targetPage >= totalPages) return;
@@ -98,9 +115,9 @@ export function useReaderControls({
       }
 
       setCurrentPage(targetPage);
+      currentPageRef.current = targetPage;
       saveProgress(targetPage);
       if (mode === "scroll") {
-        isExternalNavRef.current = true;
         setScrollRequestId((id) => id + 1);
       }
     },
@@ -163,64 +180,6 @@ export function useReaderControls({
     [navigateToPage]
   );
 
-  useEffect(() => {
-    if (mode !== "scroll" || !containerRef.current || totalPages === 0) return;
-
-    const container = containerRef.current;
-    let rafId: number;
-
-    const handleScroll = () => {
-      cancelAnimationFrame(rafId);
-      rafId = requestAnimationFrame(() => {
-        if (isExternalNavRef.current) return;
-        const scrollTop = container.scrollTop;
-        const children = container.children;
-        let closestPage = 0;
-        let minDistance = Infinity;
-
-        for (let i = 0; i < children.length; i++) {
-          const child = children[i] as HTMLElement;
-          const pageIdx = Number(child.dataset.pageIndex);
-          if (isNaN(pageIdx)) continue;
-          const distance = Math.abs(child.offsetTop - scrollTop - container.clientHeight / 3);
-          if (distance < minDistance) {
-            minDistance = distance;
-            closestPage = pageIdx;
-          }
-        }
-
-        if (closestPage !== currentPageRef.current) {
-          currentPageRef.current = closestPage;
-          setCurrentPage(closestPage);
-          saveProgress(closestPage);
-        }
-      });
-    };
-
-    const handleScrollEnd = () => {
-      if (isExternalNavRef.current) isExternalNavRef.current = false;
-    };
-
-    const handleUserGesture = () => {
-      if (isExternalNavRef.current) {
-        // 用户主动手势介入 → 打断外部导航的平滑滚动，立即交还控制权
-        container.scrollTo({ top: container.scrollTop, behavior: "instant" as ScrollBehavior });
-        isExternalNavRef.current = false;
-      }
-    };
-
-    container.addEventListener("scroll", handleScroll, { passive: true });
-    container.addEventListener("scrollend", handleScrollEnd);
-    container.addEventListener("wheel", handleUserGesture, { passive: true });
-    container.addEventListener("touchstart", handleUserGesture, { passive: true });
-    return () => {
-      container.removeEventListener("scroll", handleScroll);
-      container.removeEventListener("scrollend", handleScrollEnd);
-      container.removeEventListener("wheel", handleUserGesture);
-      container.removeEventListener("touchstart", handleUserGesture);
-      cancelAnimationFrame(rafId);
-    };
-  }, [mode, totalPages, saveProgress]);
 
   useEffect(() => {
     if (mode === "scroll" || isWidthFit) return;
@@ -415,5 +374,6 @@ export function useReaderControls({
     toggleFullscreen,
     goNext,
     goPrev,
+    handleVisiblePageChange,
   };
 }

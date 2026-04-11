@@ -160,6 +160,7 @@ export function ReaderPage() {
             initialPage={controls.currentPage}
             scrollToPage={controls.currentPage}
             scrollRequestId={controls.scrollRequestId}
+            onVisiblePageChange={controls.handleVisiblePageChange}
           />
         ) : (
           <ReaderPagedView

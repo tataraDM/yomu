@@ -1,6 +1,7 @@
 /** 书籍封面卡片组件 */
-import { useState } from "react";
+import { useCallback, useRef, useState } from "react";
 import { getCoverUrl } from "@/lib/comic-url";
+import { extractAndSetColor } from "@/stores/ambient";
 
 /** 书籍封面卡片属性 */
 interface BookCoverCardProps {
@@ -41,9 +42,17 @@ export function BookCoverCard({
 }: BookCoverCardProps) {
   const [loaded, setLoaded] = useState(false);
   const [error, setError] = useState(false);
+  const colorExtracted = useRef(false);
 
   // 获取封面图片 URL
   const coverUrl = getCoverUrl(hash);
+
+  const handleMouseEnter = useCallback(() => {
+    if (!colorExtracted.current && loaded) {
+      colorExtracted.current = true;
+      extractAndSetColor(coverUrl);
+    }
+  }, [coverUrl, loaded]);
   // 计算已读进度百分比
   const progress = pageCount && pageCount > 0 ? readProgress / pageCount : 0;
   // 获取显示的格式文本
@@ -53,6 +62,7 @@ export function BookCoverCard({
     <div
       className="w-[160px] cursor-pointer group"
       onClick={onClick}
+      onMouseEnter={handleMouseEnter}
     >
       {/* 封面图容器 */}
       <div className="w-full aspect-[2/3] rounded-[var(--radius-md)] overflow-hidden bg-bg-skeleton relative transition-transform duration-200 ease-out group-hover:scale-[1.03] group-active:scale-[0.98]">

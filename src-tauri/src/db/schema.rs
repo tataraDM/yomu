@@ -95,6 +95,18 @@ pub fn init_db(db_path: &PathBuf) -> Result<Connection, Box<dyn std::error::Erro
         log::info!("Migration: added 'series_name' column to books table");
     }
 
+    // 迁移：如果不存在则添加 scan_mode 列（文件夹导入模式）
+    let has_scan_mode: bool = db
+        .prepare("SELECT COUNT(*) FROM pragma_table_info('libraries') WHERE name = 'scan_mode'")?
+        .query_row([], |row| row.get::<_, i64>(0))
+        .map(|c| c > 0)
+        .unwrap_or(false);
+
+    if !has_scan_mode {
+        db.execute_batch("ALTER TABLE libraries ADD COLUMN scan_mode TEXT NOT NULL DEFAULT 'flat';")?;
+        log::info!("Migration: added 'scan_mode' column to libraries table");
+    }
+
     log::info!("Database initialized at {:?}", db_path);
     Ok(db)
 }

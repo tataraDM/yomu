@@ -9,13 +9,15 @@ pub async fn add_library(
     app: tauri::AppHandle,
     state: State<'_, db::DbState>,
     path: String,
+    scan_mode: Option<String>,
 ) -> Result<db::Library, String> {
+    let mode = scan_mode.as_deref().unwrap_or("flat");
     let library_id = {
         let db = state.0.lock().map_err(|e| e.to_string())?;
-        db::add_library(&db, &path).map_err(|e| e.to_string())?
+        db::add_library(&db, &path, mode).map_err(|e| e.to_string())?
     };
 
-    scan_library_inner(&app, &state, library_id, &path).await?;
+    scan_library_inner(&app, &state, library_id, &path, mode).await?;
 
     let db = state.0.lock().map_err(|e| e.to_string())?;
     let libraries = db::get_all_libraries(&db).map_err(|e| e.to_string())?;
@@ -42,8 +44,10 @@ pub async fn scan_library(
     state: State<'_, db::DbState>,
     library_id: i64,
     path: String,
+    scan_mode: Option<String>,
 ) -> Result<usize, String> {
-    scan_library_inner(&app, &state, library_id, &path).await
+    let mode = scan_mode.as_deref().unwrap_or("flat");
+    scan_library_inner(&app, &state, library_id, &path, mode).await
 }
 
 pub(crate) async fn scan_library_inner(
@@ -51,6 +55,7 @@ pub(crate) async fn scan_library_inner(
     state: &tauri::State<'_, db::DbState>,
     library_id: i64,
     path: &str,
+    scan_mode: &str,
 ) -> Result<usize, String> {
     let dir_path = std::path::PathBuf::from(path);
     let covers_dir = app
@@ -61,20 +66,33 @@ pub(crate) async fn scan_library_inner(
 
     let scan_path = dir_path.clone();
     let covers = covers_dir.clone();
+    let mode = scan_mode.to_string();
     let results = tokio::task::spawn_blocking(move || {
+        use rayon::prelude::*;
+
         let files = scanner::scan_directory(&scan_path);
         log::info!("Found {} book files in {:?}", files.len(), scan_path);
 
-        let mut processed = Vec::new();
-        for file in &files {
-            match scanner::process_book(file, &covers) {
-                Ok(book) => processed.push(book),
-                Err(e) => log::warn!("Failed to process {:?}: {}", file, e),
-            }
-        }
+        let processed: Vec<_> = files
+            .par_iter()
+            .filter_map(|file| {
+                match scanner::process_book(file, &covers) {
+                    Ok(book) => Some(book),
+                    Err(e) => {
+                        log::warn!("Failed to process {:?}: {}", file, e);
+                        None
+                    }
+                }
+            })
+            .collect();
 
-        // 批量回填系列名（同目录下同名前缀 ≥2 本才折叠）
-        scanner::assign_series_names(&mut processed);
+        let mut processed = processed;
+
+        if mode == "folder" {
+            scanner::assign_series_by_folder(&mut processed, &scan_path);
+        } else {
+            scanner::assign_series_names(&mut processed);
+        }
 
         processed
     })

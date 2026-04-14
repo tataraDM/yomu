@@ -3,7 +3,7 @@ import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { open } from "@tauri-apps/plugin-dialog";
 import { createFileRoute } from "@tanstack/react-router";
-import { FolderOpen, Plus, RefreshCw, Trash2 } from "lucide-react";
+import { FolderOpen, FolderTree, Plus, RefreshCw, Trash2 } from "lucide-react";
 import type { Library } from "@/lib/types";
 
 export const Route = createFileRoute("/settings/library")({
@@ -30,15 +30,15 @@ function LibrarySettings() {
     loadLibraries();
   }, [loadLibraries]);
 
-  const handleAdd = useCallback(async () => {
+  const handleAdd = useCallback(async (scanMode: "flat" | "folder" = "flat") => {
     try {
       const selected = await open({
         directory: true,
         multiple: false,
-        title: "选择漫画文件夹",
+        title: scanMode === "folder" ? "选择包含多个漫画子文件夹的目录" : "选择漫画文件夹",
       });
       if (!selected) return;
-      await invoke("add_library", { path: selected });
+      await invoke("add_library", { path: selected, scanMode });
       await loadLibraries();
     } catch (e) {
       console.error("Failed to add library:", e);
@@ -61,7 +61,7 @@ function LibrarySettings() {
     async (lib: Library) => {
       try {
         setScanning(lib.id);
-        await invoke("scan_library", { libraryId: lib.id, path: lib.path });
+        await invoke("scan_library", { libraryId: lib.id, path: lib.path, scanMode: lib.scan_mode });
         await loadLibraries();
       } catch (e) {
         console.error("Failed to rescan library:", e);
@@ -99,11 +99,18 @@ function LibrarySettings() {
       {/* 添加按钮 */}
       <div className="flex items-center gap-3">
         <button
-          onClick={handleAdd}
+          onClick={() => handleAdd("flat")}
           className="inline-flex items-center gap-2 border border-accent-border bg-accent-light px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-accent/20"
         >
           <Plus size={16} />
           添加书库目录
+        </button>
+        <button
+          onClick={() => handleAdd("folder")}
+          className="inline-flex items-center gap-2 border border-accent-border bg-accent-light px-4 py-2.5 text-sm font-medium text-text-primary transition-colors hover:bg-accent/20"
+        >
+          <FolderTree size={16} />
+          导入文件夹（子目录为系列）
         </button>
         <button
           onClick={handleCleanupCache}
@@ -133,8 +140,13 @@ function LibrarySettings() {
             >
               <FolderOpen size={20} className="shrink-0 text-accent" />
               <div className="min-w-0 flex-1">
-                <div className="text-sm font-medium text-text-primary truncate">
-                  {lib.name ?? lib.path}
+                <div className="flex items-center gap-2 text-sm font-medium text-text-primary">
+                  <span className="truncate">{lib.name ?? lib.path}</span>
+                  {lib.scan_mode === "folder" && (
+                    <span className="shrink-0 px-1.5 py-0.5 text-[10px] rounded bg-accent/15 text-accent border border-accent/20">
+                      文件夹模式
+                    </span>
+                  )}
                 </div>
                 <div className="mt-1 text-[11px] text-text-tertiary truncate">
                   {lib.path}

@@ -3,15 +3,15 @@ use rusqlite::Connection;
 use super::models::Library;
 
 /// 添加一个新的库目录
-pub fn add_library(db: &Connection, path: &str) -> Result<i64, Box<dyn std::error::Error>> {
+pub fn add_library(db: &Connection, path: &str, scan_mode: &str) -> Result<i64, Box<dyn std::error::Error>> {
     let name = std::path::Path::new(path)
         .file_name()
         .and_then(|n| n.to_str())
         .map(|s| s.to_string());
 
     db.execute(
-        "INSERT OR IGNORE INTO libraries (path, name) VALUES (?1, ?2)",
-        rusqlite::params![path, name],
+        "INSERT OR IGNORE INTO libraries (path, name, scan_mode) VALUES (?1, ?2, ?3)",
+        rusqlite::params![path, name, scan_mode],
     )?;
 
     // 无论刚插入还是已存在，都返回 ID
@@ -27,7 +27,7 @@ pub fn add_library(db: &Connection, path: &str) -> Result<i64, Box<dyn std::erro
 /// 获取所有已注册的库
 pub fn get_all_libraries(db: &Connection) -> Result<Vec<Library>, Box<dyn std::error::Error>> {
     let mut stmt = db.prepare(
-        "SELECT id, path, name, created_at, last_scan FROM libraries ORDER BY created_at DESC"
+        "SELECT id, path, name, created_at, last_scan, scan_mode FROM libraries ORDER BY created_at DESC"
     )?;
 
     let libraries = stmt.query_map([], |row| {
@@ -37,6 +37,7 @@ pub fn get_all_libraries(db: &Connection) -> Result<Vec<Library>, Box<dyn std::e
             name: row.get(2)?,
             created_at: row.get(3)?,
             last_scan: row.get(4)?,
+            scan_mode: row.get::<_, Option<String>>(5)?.unwrap_or_else(|| "flat".to_string()),
         })
     })?.collect::<Result<Vec<_>, _>>()?;
 

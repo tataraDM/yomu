@@ -102,7 +102,7 @@ async fn auto_rescan_libraries(app: &tauri::AppHandle) {
         let db_state: Option<tauri::State<db::DbState>> = app.try_state();
         let Some(db_state) = db_state else { return; };
 
-        match crate::commands::libraries::scan_library_inner(app, &db_state, lib.id, &lib.path).await {
+        match crate::commands::libraries::scan_library_inner(app, &db_state, lib.id, &lib.path, &lib.scan_mode).await {
             Ok(count) => log::info!("Auto-rescan: {:?} → {} books", lib.path, count),
             Err(e) => log::warn!("Auto-rescan: failed to scan {:?}: {}", lib.path, e),
         }

@@ -84,7 +84,45 @@ pub fn process_book(
     })
 }
 
-/// 批量回填系列名。
+/// 按文件夹结构回填系列名（文件夹导入模式）。
+///
+/// 规则：
+/// 1. 按父目录分组。
+/// 2. 如果父目录不是导入的库根目录，则将该目录名作为系列名赋给目录下所有书。
+/// 3. 库根目录下的书保持独立（不赋系列名）。
+/// 4. 单本书的目录也赋系列名（与传统模式不同）。
+pub fn assign_series_by_folder(books: &mut [ScannedBook], library_root: &std::path::Path) {
+    use std::collections::HashMap;
+
+    let root_canonical = library_root.to_string_lossy().to_lowercase();
+
+    let mut groups: HashMap<String, Vec<usize>> = HashMap::new();
+    for (idx, book) in books.iter().enumerate() {
+        if let Some(parent) = book.path.parent() {
+            let parent_str = parent.to_string_lossy().to_string();
+            groups.entry(parent_str).or_default().push(idx);
+        }
+    }
+
+    for (parent_path, indices) in groups {
+        // 跳过库根目录下的直接文件
+        if parent_path.to_lowercase() == root_canonical {
+            continue;
+        }
+
+        let parent_name = match std::path::Path::new(&parent_path)
+            .file_name()
+            .and_then(|n| n.to_str())
+        {
+            Some(name) if !name.is_empty() => name.to_string(),
+            _ => continue,
+        };
+
+        for i in indices {
+            books[i].series_name = Some(parent_name.clone());
+        }
+    }
+}
 ///
 /// 规则：
 /// 1. 按父目录分组。

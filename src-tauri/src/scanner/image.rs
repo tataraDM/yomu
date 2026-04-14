@@ -15,7 +15,7 @@ pub(crate) fn resize_to_webp(raw_bytes: &[u8], max_height: u32) -> Result<Vec<u8
         .map_err(|e| format!("Failed to decode image: {}", e))?;
 
     let resized = if img.height() > max_height {
-        img.resize(u32::MAX, max_height, image::imageops::FilterType::Lanczos3)
+        img.resize(u32::MAX, max_height, image::imageops::FilterType::Triangle)
     } else {
         img
     };

@@ -52,7 +52,7 @@ export function LibraryPage() {
       });
       if (!selected) return;
       setScanning(true);
-      await invoke("add_library", { path: selected });
+      await invoke("add_library", { path: selected, scanMode: "flat" });
       await loadBooks();
     } catch (e) {
       logger.error("Failed to add library", e);

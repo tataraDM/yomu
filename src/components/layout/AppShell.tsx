@@ -2,6 +2,7 @@
 import { TitleBar } from "./TitleBar";
 import { Sidebar } from "./Sidebar";
 import { AnimatedOutlet } from "@/components/AnimatedOutlet";
+import { HelpDialog, useFirstTimeHelp } from "@/components/HelpDialog";
 import { useSettingsStore } from "@/stores/settings";
 import { useAmbientStore } from "@/stores/ambient";
 
@@ -13,6 +14,7 @@ export function AppShell() {
   // 获取侧边栏折叠状态
   const sidebarCollapsed = useSettingsStore((s) => s.sidebarCollapsed);
   const ambientColor = useAmbientStore((s) => s.color);
+  const { showHelp, setShowHelp } = useFirstTimeHelp();
 
   const ambientStyle = ambientColor
     ? {
@@ -33,7 +35,7 @@ export function AppShell() {
       <TitleBar />
       <div className="relative z-[1] flex flex-1 overflow-hidden border-t border-[var(--color-border-strong)]/70">
         {/* 侧边栏 */}
-        <Sidebar collapsed={sidebarCollapsed} />
+        <Sidebar collapsed={sidebarCollapsed} onOpenHelp={() => setShowHelp(true)} />
 
         {/* 主内容区域 */}
         <main className="flex-1 overflow-y-auto bg-transparent p-4 md:p-5">
@@ -43,6 +45,7 @@ export function AppShell() {
           </div>
         </main>
       </div>
+      <HelpDialog open={showHelp} onClose={() => setShowHelp(false)} />
     </div>
   );
 }

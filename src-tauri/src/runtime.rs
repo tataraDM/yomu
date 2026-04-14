@@ -52,6 +52,8 @@ pub fn run() {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 auto_rescan_libraries(&handle).await;
+                // 重扫完成后启动文件监控
+                crate::watcher::start_watcher(&handle);
             });
             
             Ok(())
@@ -72,6 +74,9 @@ pub fn run() {
             crate::commands::debug::get_log_path,
             crate::commands::debug::get_debug_info,
             crate::commands::debug::export_logs,
+            crate::commands::everything::check_everything_available,
+            crate::commands::everything::search_everything,
+            crate::commands::everything::import_from_everything,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");

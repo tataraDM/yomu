@@ -1,6 +1,7 @@
 /** 图书馆页面说明 */
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { Route } from "@/routes/library";
@@ -41,6 +42,14 @@ export function LibraryPage() {
 
   useEffect(() => {
     loadBooks();
+  }, [loadBooks]);
+
+  // 监听文件监控自动导入事件
+  useEffect(() => {
+    const unlisten = listen("books-updated", () => {
+      loadBooks();
+    });
+    return () => { unlisten.then((fn) => fn()); };
   }, [loadBooks]);
 
   const handleAddLibrary = useCallback(async () => {

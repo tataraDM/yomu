@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { FitMode, ReadingDirection, ReadingMode } from "@/stores/settings";
+import type { FlipControl } from "./ReaderFlipView";
 
 interface UseReaderControlsParams {
   bookId: string;
@@ -42,6 +43,7 @@ export function useReaderControls({
   }, [bookId, initialPage]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const flipControlRef = useRef<FlipControl | null>(null);
   const currentPageRef = useRef(initialPage);
   const isDraggingSlider = useRef(false);
   const sliderCommitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -106,6 +108,15 @@ export function useReaderControls({
       const distance = Math.abs(targetPage - currentPage);
       if (distance === 0) return;
 
+      // 仿真模式：委托 PageFlip 实例跳页
+      if (mode === "flip") {
+        flipControlRef.current?.turnToPage(targetPage);
+        setCurrentPage(targetPage);
+        currentPageRef.current = targetPage;
+        saveProgress(targetPage);
+        return;
+      }
+
       if (source === "slider" || distance > 3) {
         setSlideDirection("none");
       } else {
@@ -124,6 +135,10 @@ export function useReaderControls({
   );
 
   const goNext = useCallback(() => {
+    if (mode === "flip") {
+      flipControlRef.current?.flipNext();
+      return;
+    }
     if (mode === "double") {
       const aligned = currentPage % 2 === 0 ? currentPage : currentPage - 1;
       navigateToPage(Math.min(aligned + 2, totalPages - 1), "button");
@@ -133,6 +148,10 @@ export function useReaderControls({
   }, [currentPage, totalPages, mode, navigateToPage]);
 
   const goPrev = useCallback(() => {
+    if (mode === "flip") {
+      flipControlRef.current?.flipPrev();
+      return;
+    }
     if (mode === "double") {
       const aligned = currentPage % 2 === 0 ? currentPage : currentPage - 1;
       navigateToPage(Math.max(aligned - 2, 0), "button");
@@ -307,6 +326,7 @@ export function useReaderControls({
 
   return {
     containerRef,
+    flipControlRef,
     currentPage,
     displayPage,
     handleBack,

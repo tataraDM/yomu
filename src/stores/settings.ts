@@ -3,8 +3,8 @@
 import { create } from "zustand";
 import { persist } from "zustand/middleware";
 
-/** 阅读模式：单页、双页、垂直滚动 */
-export type ReadingMode = "single" | "double" | "scroll";
+/** 阅读模式：单页、双页、垂直滚动、仿真翻页 */
+export type ReadingMode = "single" | "double" | "scroll" | "flip";
 
 /** 翻页方向：从左到右（西方漫画）/ 从右到左（日本漫画） */
 export type ReadingDirection = "ltr" | "rtl";
@@ -74,7 +74,7 @@ export const useSettingsStore = create<SettingsState>()(
     }),
     {
       name: "yomu-settings",
-      version: 4,
+      version: 5,
       migrate: (persisted: unknown, version: number) => {
         const state = persisted as Record<string, unknown>;
         if (version === 0 && state.fitMode === "original") {
@@ -91,6 +91,9 @@ export const useSettingsStore = create<SettingsState>()(
           if (!state.imageEnhance) {
             state.imageEnhance = { sharpen: false, contrastBoost: false, textEnhance: false };
           }
+        }
+        if (version < 5) {
+          // v5: 新增 flip 阅读模式，无需迁移数据，仅占位确保版本号递增
         }
         return state as unknown as SettingsState;
       },

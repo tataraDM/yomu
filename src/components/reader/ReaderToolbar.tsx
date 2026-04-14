@@ -164,6 +164,7 @@ export function ReaderToolbar({
                   }}
                   open={openMenu === "fit"}
                   onToggle={() => onSetOpenMenu(openMenu === "fit" ? null : "fit")}
+                  disabled={mode === "flip"}
                 />
               </div>
 

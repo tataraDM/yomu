@@ -1,8 +1,9 @@
 import { AnimatePresence, motion } from "motion/react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
+import type { ReadingMode } from "@/stores/settings";
 
 interface ReaderOverlayProps {
-  mode: "single" | "double" | "scroll";
+  mode: ReadingMode;
   isRTL: boolean;
   currentPage: number;
   totalPages: number;
@@ -41,7 +42,7 @@ export function ReaderOverlay({
         )}
       </AnimatePresence>
 
-      {mode !== "scroll" && (
+      {mode !== "scroll" && mode !== "flip" && (
         <>
           {currentPage > 0 && (
             <button

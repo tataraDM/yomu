@@ -198,7 +198,7 @@ function InputField({
         placeholder={placeholder}
         value={value}
         onChange={(e) => onChange(e.target.value)}
-        className="w-full border border-border bg-[#0d0d0d] px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-[var(--color-accent-border)] focus:outline-none"
+        className="w-full border border-border bg-bg-surface-2 px-3 py-2.5 text-sm text-text-primary placeholder:text-text-muted focus:border-[var(--color-accent-border)] focus:outline-none"
       />
     </div>
   );

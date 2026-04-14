@@ -35,20 +35,20 @@ function getImageClasses(mode: ReadingMode, fitMode: FitMode, loaded: boolean): 
 }
 
 /** 根据增强选项构建 CSS filter 字符串 */
-function buildEnhanceFilter(enhance?: ImageEnhanceOptions): string | undefined {
+export function buildEnhanceFilter(enhance?: ImageEnhanceOptions): string | undefined {
   if (!enhance) return undefined;
   const filters: string[] = [];
   if (enhance.sharpen) {
-    // 锐化：轻微对比度提升 + 饱和度提升模拟视觉锐利感
-    filters.push("contrast(1.08)", "saturate(1.05)");
+    // 锐化：较强对比度 + 饱和度提升模拟视觉锐利感
+    filters.push("contrast(1.2)", "saturate(1.1)");
   }
   if (enhance.contrastBoost) {
     // 色差增强：提高对比度和饱和度，让颜色更鲜明
-    filters.push("contrast(1.18)", "saturate(1.2)", "brightness(1.02)");
+    filters.push("contrast(1.35)", "saturate(1.4)", "brightness(1.04)");
   }
   if (enhance.textEnhance) {
     // 文字增强：高对比 + 略降亮度，让文字更清晰
-    filters.push("contrast(1.25)", "brightness(0.97)");
+    filters.push("contrast(1.5)", "brightness(0.94)");
   }
   return filters.length > 0 ? filters.join(" ") : undefined;
 }

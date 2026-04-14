@@ -208,6 +208,7 @@ export const ReaderPagedView = forwardRef<HTMLDivElement, ReaderPagedViewProps>(
                 rightPageIndex={rightPageIndex}
                 totalPages={totalPages}
                 fitMode={fitMode}
+                imageEnhance={imageEnhance}
               />
             )}
           </motion.div>

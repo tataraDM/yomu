@@ -6,7 +6,7 @@ export const Route = createFileRoute("/settings/general")({
   component: GeneralSettings,
 });
 
-const modeLabels: Record<ReadingMode, string> = { single: "单页", double: "双页", scroll: "卷轴" };
+const modeLabels: Record<ReadingMode, string> = { single: "单页", double: "双页", scroll: "卷轴", flip: "仿真" };
 const dirLabels: Record<ReadingDirection, string> = { ltr: "左到右", rtl: "右到左" };
 const fitLabels: Record<FitMode, string> = { height: "适高", width: "适宽", contain: "适应" };
 

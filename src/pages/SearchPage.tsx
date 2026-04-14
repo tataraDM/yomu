@@ -60,7 +60,7 @@ export function SearchPage() {
             placeholder="搜索书籍标题…"
             value={query}
             onChange={(e) => setQuery(e.target.value)}
-            className="w-full border border-border bg-[#0d0d0d] py-4 pl-12 pr-12 text-sm tracking-[0.03em] text-text-primary placeholder:text-text-muted focus:border-[var(--color-accent-border)] focus:outline-none"
+            className="w-full border border-border bg-bg-surface-2 py-4 pl-12 pr-12 text-sm tracking-[0.03em] text-text-primary placeholder:text-text-muted focus:border-[var(--color-accent-border)] focus:outline-none"
           />
           {query && (
             <button

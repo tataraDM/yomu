@@ -1,13 +1,11 @@
-import { useEffect, useMemo, useRef, forwardRef } from "react";
+import { useEffect, useRef, forwardRef } from "react";
 import { Virtuoso, type VirtuosoHandle } from "react-virtuoso";
 import { AnimatePresence, motion } from "motion/react";
 import type { ReadingDirection, FitMode } from "@/stores/settings";
 import type { ImageEnhanceOptions } from "@/stores/settings";
-import { getPageUrl } from "@/lib/comic-url";
 import { ReaderPageImage } from "./ReaderPageImage";
 import { ReaderDoublePageSpread } from "./ReaderDoublePageSpread";
 
-const RENDER_BUFFER = 2;
 
 interface ReaderScrollViewProps {
   bookHash: string;
@@ -123,34 +121,6 @@ export const ReaderPagedView = forwardRef<HTMLDivElement, ReaderPagedViewProps>(
       internalRef.current?.scrollTo(0, 0);
     }, [currentPage]);
 
-    const pages = useMemo(() => {
-      if (mode === "single") {
-        const result: number[] = [];
-        for (
-          let i = Math.max(0, currentPage - RENDER_BUFFER);
-          i <= Math.min(totalPages - 1, currentPage + RENDER_BUFFER);
-          i++
-        ) {
-          result.push(i);
-        }
-        return result;
-      }
-
-      const currentSlot = Math.floor(currentPage / 2);
-      const result: number[] = [];
-      for (
-        let slot = Math.max(0, currentSlot - RENDER_BUFFER);
-        slot <= Math.min(Math.ceil(totalPages / 2) - 1, currentSlot + RENDER_BUFFER);
-        slot++
-      ) {
-        result.push(slot * 2);
-        if (slot * 2 + 1 < totalPages) {
-          result.push(slot * 2 + 1);
-        }
-      }
-      return result;
-    }, [currentPage, totalPages, mode]);
-
     const currentSlot = mode === "double" ? Math.floor(currentPage / 2) : currentPage;
     const leftPageIndex = isRTL ? currentSlot * 2 + 1 : currentSlot * 2;
     const rightPageIndex = isRTL ? currentSlot * 2 : currentSlot * 2 + 1;
@@ -213,18 +183,6 @@ export const ReaderPagedView = forwardRef<HTMLDivElement, ReaderPagedViewProps>(
             )}
           </motion.div>
         </AnimatePresence>
-
-        <div className="sr-only" aria-hidden="true">
-          {pages
-            .filter((p) => {
-              if (mode === "single") return p !== currentPage;
-              const slot = Math.floor(p / 2);
-              return slot !== currentSlot;
-            })
-            .map((p) => (
-              <img key={`prerender-${p}`} src={getPageUrl(bookHash, p)} alt="" />
-            ))}
-        </div>
       </div>
     );
   }

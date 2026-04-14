@@ -169,7 +169,8 @@ pub async fn cleanup_cache(
     result
 }
 
-fn detect_ext(bytes: &[u8]) -> Option<&'static str> {
+/// 根据魔数检测图像格式扩展名
+pub(crate) fn detect_ext(bytes: &[u8]) -> Option<&'static str> {
     if bytes.len() >= 2 && bytes[0] == 0xFF && bytes[1] == 0xD8 { return Some("jpg"); }
     if bytes.len() >= 4 && bytes[0] == 0x89 && &bytes[1..4] == b"PNG" { return Some("png"); }
     if bytes.len() >= 12 && &bytes[0..4] == b"RIFF" && &bytes[8..12] == b"WEBP" { return Some("webp"); }

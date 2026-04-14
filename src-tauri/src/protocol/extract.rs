@@ -87,21 +87,19 @@ fn encode_webp(img: &image::DynamicImage, quality: f32) -> Result<(Vec<u8>, Stri
 }
 
 fn detect_mime(bytes: &[u8]) -> String {
-    if bytes.len() < 4 {
-        return "application/octet-stream".to_string();
-    }
-    if bytes[0] == 0xFF && bytes[1] == 0xD8 {
-        "image/jpeg".to_string()
-    } else if bytes[0] == 0x89 && &bytes[1..4] == b"PNG" {
-        "image/png".to_string()
-    } else if &bytes[0..4] == b"RIFF" && bytes.len() >= 12 && &bytes[8..12] == b"WEBP" {
-        "image/webp".to_string()
-    } else if &bytes[0..3] == b"GIF" {
-        "image/gif".to_string()
-    } else if &bytes[0..2] == b"BM" {
-        "image/bmp".to_string()
-    } else {
-        "application/octet-stream".to_string()
+    match crate::commands::cache::detect_ext(bytes) {
+        Some("jpg") => "image/jpeg".to_string(),
+        Some("png") => "image/png".to_string(),
+        Some("webp") => "image/webp".to_string(),
+        Some("gif") => "image/gif".to_string(),
+        _ => {
+            // 额外检查 BMP（detect_ext 不覆盖）
+            if bytes.len() >= 2 && &bytes[0..2] == b"BM" {
+                "image/bmp".to_string()
+            } else {
+                "application/octet-stream".to_string()
+            }
+        }
     }
 }
 

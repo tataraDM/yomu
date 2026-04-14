@@ -39,7 +39,7 @@ export function AppShell() {
 
         {/* 主内容区域 */}
         <main className="flex-1 overflow-y-auto bg-transparent p-4 md:p-5">
-          <div className="panel-frame min-h-full rounded-[var(--radius-lg)] p-5 md:p-7">
+          <div className="panel-frame panel-frame-inner min-h-full rounded-[var(--radius-lg)] p-5 md:p-7">
             {/* 路由内容出口（带过渡动画） */}
             <AnimatedOutlet />
           </div>

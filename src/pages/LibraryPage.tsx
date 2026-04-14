@@ -127,7 +127,7 @@ export function LibraryPage() {
         <div className="grid grid-cols-[repeat(auto-fill,160px)] gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="w-[160px]">
-              <div className="panel-frame w-full aspect-[2/3] skeleton rounded-[22px]" />
+              <div className="w-full aspect-[2/3] skeleton rounded-[var(--radius-md)]" />
               <div className="mt-3 h-[14px] w-[78%] skeleton rounded" />
               <div className="mt-2 h-[12px] w-[46%] skeleton rounded" />
             </div>

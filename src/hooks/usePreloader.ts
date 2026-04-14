@@ -6,6 +6,7 @@ import { getPageUrl } from "@/lib/comic-url";
 
 const PRELOAD_AHEAD = 6;
 const PRELOAD_BEHIND = 3;
+const MAX_PRELOADED = 50;
 
 /**
  * 阅读器方向感知预加载钩子
@@ -54,6 +55,13 @@ export function usePreloader(
       const img = new Image();
       img.src = url;
       preloadedSet.current.add(url);
+    }
+
+    // 限制 set 大小，淘汰最早的条目
+    if (preloadedSet.current.size > MAX_PRELOADED) {
+      const entries = Array.from(preloadedSet.current);
+      const toRemove = entries.slice(0, entries.length - MAX_PRELOADED);
+      for (const url of toRemove) preloadedSet.current.delete(url);
     }
 
     invoke("warm_cache", {

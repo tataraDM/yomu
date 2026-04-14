@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { getPageUrl } from "@/lib/comic-url";
-import type { FitMode } from "@/stores/settings";
+import type { FitMode, ImageEnhanceOptions } from "@/stores/settings";
+import { buildEnhanceFilter } from "./ReaderPageImage";
 
 interface ReaderDoublePageSpreadProps {
   bookHash: string;
@@ -8,6 +9,7 @@ interface ReaderDoublePageSpreadProps {
   rightPageIndex: number;
   totalPages: number;
   fitMode: FitMode;
+  imageEnhance?: ImageEnhanceOptions;
 }
 
 /** 双页模式下的跨页布局组件 */
@@ -17,6 +19,7 @@ export function ReaderDoublePageSpread({
   rightPageIndex,
   totalPages,
   fitMode,
+  imageEnhance,
 }: ReaderDoublePageSpreadProps) {
   const containerRef = useRef<HTMLDivElement>(null);
   const [containerSize, setContainerSize] = useState<{ w: number; h: number }>({ w: 0, h: 0 });
@@ -128,8 +131,10 @@ export function ReaderDoublePageSpread({
     };
   }, [layout, containerSize, isWidth, isContain, isSinglePage]);
 
+  const enhanceFilter = useMemo(() => buildEnhanceFilter(imageEnhance), [imageEnhance]);
+
   return (
-    <div ref={containerRef} className={wrapperCls}>
+    <div ref={containerRef} className={wrapperCls} style={enhanceFilter ? { filter: enhanceFilter } : undefined}>
       {hasLeft && (
         <ReaderDoublePageImage
           key={`dbl-${leftPageIndex}`}

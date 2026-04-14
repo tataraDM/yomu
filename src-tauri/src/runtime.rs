@@ -52,6 +52,8 @@ pub fn run() {
             let handle = app.handle().clone();
             tauri::async_runtime::spawn(async move {
                 auto_rescan_libraries(&handle).await;
+                // 重扫完成后启动文件监控
+                crate::watcher::start_watcher(&handle);
             });
             
             Ok(())
@@ -59,6 +61,7 @@ pub fn run() {
         .invoke_handler(tauri::generate_handler![
             crate::commands::books::get_books,
             crate::commands::books::get_book_by_hash,
+            crate::commands::books::get_next_book,
             crate::commands::books::save_reading_progress,
             crate::commands::cache::warm_cache,
             crate::commands::cache::cleanup_cache,
@@ -72,6 +75,9 @@ pub fn run() {
             crate::commands::debug::get_log_path,
             crate::commands::debug::get_debug_info,
             crate::commands::debug::export_logs,
+            crate::commands::everything::check_everything_available,
+            crate::commands::everything::search_everything,
+            crate::commands::everything::import_from_everything,
         ])
         .run(tauri::generate_context!())
         .expect("error while running tauri application");
@@ -102,7 +108,7 @@ async fn auto_rescan_libraries(app: &tauri::AppHandle) {
         let db_state: Option<tauri::State<db::DbState>> = app.try_state();
         let Some(db_state) = db_state else { return; };
 
-        match crate::commands::libraries::scan_library_inner(app, &db_state, lib.id, &lib.path).await {
+        match crate::commands::libraries::scan_library_inner(app, &db_state, lib.id, &lib.path, &lib.scan_mode).await {
             Ok(count) => log::info!("Auto-rescan: {:?} → {} books", lib.path, count),
             Err(e) => log::warn!("Auto-rescan: failed to scan {:?}: {}", lib.path, e),
         }

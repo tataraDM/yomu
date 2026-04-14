@@ -7,12 +7,15 @@ import {
   Tag,
   Search,
   Settings,
+  HelpCircle,
 } from "lucide-react";
 
 /** 侧边栏属性 */
 interface SidebarProps {
   /** 是否折叠 */
   collapsed: boolean;
+  /** 打开帮助对话框 */
+  onOpenHelp?: () => void;
 }
 
 // 导航菜单配置，对应书架页的不同筛选视图
@@ -33,7 +36,7 @@ const bottomItems = [
  * 侧边栏组件
  * 提供应用的主导航和底部功能入口
  */
-export function Sidebar({ collapsed }: SidebarProps) {
+export function Sidebar({ collapsed, onOpenHelp }: SidebarProps) {
   // 折叠状态下直接不渲染侧边栏，保持主内容区最大化
   if (collapsed) return null;
 
@@ -96,6 +99,15 @@ export function Sidebar({ collapsed }: SidebarProps) {
               <span>{item.label}</span>
             </Link>
           ))}
+          {onOpenHelp && (
+            <button
+              onClick={onOpenHelp}
+              className="w-full flex items-center gap-3 border border-transparent px-3 py-3 text-sm text-text-secondary transition-all duration-150 hover:border-border hover:bg-bg-hover hover:text-text-primary"
+            >
+              <HelpCircle size={17} className="shrink-0 opacity-80" />
+              <span>帮助</span>
+            </button>
+          )}
         </div>
       </div>
 

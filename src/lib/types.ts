@@ -22,4 +22,5 @@ export interface Library {
   name: string | null;
   created_at: number;
   last_scan: number | null;
+  scan_mode: string;
 }

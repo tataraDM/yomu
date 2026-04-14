@@ -28,4 +28,5 @@ pub struct Library {
     pub name: Option<String>,
     pub created_at: i64,
     pub last_scan: Option<i64>,
+    pub scan_mode: String,
 }

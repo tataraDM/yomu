@@ -1,4 +1,4 @@
-/** 阅读器页面 — 支持单页/双页/卷轴模式，含底部功能面板 */
+/** 阅读器页面 — 支持单页/双页/卷轴/仿真翻页模式，含底部功能面板 */
 import { useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { useNavigate } from "@tanstack/react-router";
@@ -7,7 +7,9 @@ import {
   ArrowLeft,
   ArrowLeftRight,
   ArrowRightLeft,
+  BookOpen,
   Columns2,
+  Crop,
   FileText,
   Fullscreen,
   RectangleHorizontal,
@@ -22,6 +24,7 @@ import {
   ReaderOverlay,
   ReaderPagedView,
   ReaderScrollView,
+  ReaderFlipView,
   ReaderToolbar,
   useReaderControls,
   type BookInfo,
@@ -52,6 +55,9 @@ export function ReaderPage() {
   const setFitMode = useSettingsStore((s) => s.setFitMode);
   const imageEnhance = useSettingsStore((s) => s.imageEnhance);
   const setImageEnhance = useSettingsStore((s) => s.setImageEnhance);
+  const autoLoadNext = useSettingsStore((s) => s.autoLoadNext);
+  const readerBgColor = useSettingsStore((s) => s.readerBgColor);
+  const setReaderBgColor = useSettingsStore((s) => s.setReaderBgColor);
 
   const totalPages = book?.page_count ?? 0;
 
@@ -59,6 +65,7 @@ export function ReaderPage() {
     { value: "single", icon: FileText, label: "单页" },
     { value: "double", icon: Columns2, label: "双页" },
     { value: "scroll", icon: Scroll, label: "卷轴" },
+    { value: "flip", icon: BookOpen, label: "仿真" },
   ];
   const dirOptions: ReaderDirectionOption[] = [
     { value: "ltr", icon: ArrowLeftRight, label: "左到右" },
@@ -77,6 +84,7 @@ export function ReaderPage() {
     mode,
     direction,
     fitMode,
+    autoLoadNext,
     navigate,
   });
 
@@ -140,10 +148,17 @@ export function ReaderPage() {
       active: imageEnhance.textEnhance,
       onToggle: () => setImageEnhance({ textEnhance: !imageEnhance.textEnhance }),
     },
+    {
+      key: "trim",
+      icon: Crop,
+      label: "白边裁剪",
+      active: imageEnhance.trimWhiteBorders,
+      onToggle: () => setImageEnhance({ trimWhiteBorders: !imageEnhance.trimWhiteBorders }),
+    },
   ];
 
   return (
-    <div className="reader-view fixed inset-0 flex flex-col select-none">
+    <div className="reader-view fixed inset-0 flex flex-col select-none" style={{ backgroundColor: readerBgColor }}>
       <ReaderToolbar
         showToolbar={controls.showToolbar}
         isFullscreen={controls.isFullscreen}
@@ -169,45 +184,71 @@ export function ReaderPage() {
         onSliderMouseDown={controls.handleSliderMouseDown}
         onSliderMouseUp={controls.handleSliderMouseUp}
         enhanceButtons={enhanceButtons}
+        readerBgColor={readerBgColor}
+        onSetReaderBgColor={setReaderBgColor}
       />
 
-      <GestureLayer
-        onTapLeft={controls.handleTapLeft}
-        onTapRight={controls.handleTapRight}
-        onTapCenter={controls.handleTapCenter}
-        onSwipeLeft={mode !== "scroll" ? (controls.isRTL ? controls.goPrev : controls.goNext) : undefined}
-        onSwipeRight={mode !== "scroll" ? (controls.isRTL ? controls.goNext : controls.goPrev) : undefined}
-        disabled={isZoomed}
-        allowHorizontalPan={mode === "scroll"}
-        allowVerticalPan={mode !== "scroll" && fitMode === "width"}
-      >
-        {mode === "scroll" ? (
-          <ReaderScrollView
-            ref={controls.containerRef}
+      {mode === "flip" ? (
+        <div className="flex-1 min-h-0 relative">
+          <ReaderFlipView
+            ref={controls.flipControlRef}
             bookHash={bookId}
             totalPages={totalPages}
-            fitMode={fitMode}
-            initialPage={controls.currentPage}
-            scrollToPage={controls.currentPage}
-            scrollRequestId={controls.scrollRequestId}
-            imageEnhance={imageEnhance}
-            onVisiblePageChange={controls.handleVisiblePageChange}
-          />
-        ) : (
-          <ReaderPagedView
-            ref={controls.containerRef}
-            bookHash={bookId}
             currentPage={controls.currentPage}
-            totalPages={totalPages}
-            mode={mode}
-            direction={direction}
-            fitMode={fitMode}
-            slideDirection={controls.slideDirection}
             imageEnhance={imageEnhance}
-            onSlideComplete={() => controls.setSlideDirection("none")}
+            onPageChange={controls.handleVisiblePageChange}
           />
-        )}
-      </GestureLayer>
+          {/* 仿真模式的中央点击区域（用于切换工具栏） */}
+          <div
+            className="absolute inset-0 z-10"
+            style={{ pointerEvents: "none" }}
+          >
+            <div
+              className="absolute left-1/3 right-1/3 top-1/4 bottom-1/4"
+              style={{ pointerEvents: "auto" }}
+              onClick={controls.handleTapCenter}
+            />
+          </div>
+        </div>
+      ) : (
+        <GestureLayer
+          onTapLeft={controls.handleTapLeft}
+          onTapRight={controls.handleTapRight}
+          onTapCenter={controls.handleTapCenter}
+          onSwipeLeft={mode !== "scroll" ? (controls.isRTL ? controls.goPrev : controls.goNext) : undefined}
+          onSwipeRight={mode !== "scroll" ? (controls.isRTL ? controls.goNext : controls.goPrev) : undefined}
+          disabled={isZoomed}
+          allowHorizontalPan={mode === "scroll"}
+          allowVerticalPan={mode !== "scroll" && fitMode === "width"}
+        >
+          {mode === "scroll" ? (
+            <ReaderScrollView
+              ref={controls.containerRef}
+              bookHash={bookId}
+              totalPages={totalPages}
+              fitMode={fitMode}
+              initialPage={controls.currentPage}
+              scrollToPage={controls.currentPage}
+              scrollRequestId={controls.scrollRequestId}
+              imageEnhance={imageEnhance}
+              onVisiblePageChange={controls.handleVisiblePageChange}
+            />
+          ) : (
+            <ReaderPagedView
+              ref={controls.containerRef}
+              bookHash={bookId}
+              currentPage={controls.currentPage}
+              totalPages={totalPages}
+              mode={mode}
+              direction={direction}
+              fitMode={fitMode}
+              slideDirection={controls.slideDirection}
+              imageEnhance={imageEnhance}
+              onSlideComplete={() => controls.setSlideDirection("none")}
+            />
+          )}
+        </GestureLayer>
+      )}
 
       <ReaderOverlay
         mode={mode}

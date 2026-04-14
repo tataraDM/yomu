@@ -1,6 +1,7 @@
 /** 图书馆页面说明 */
 import { useCallback, useEffect, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
+import { listen } from "@tauri-apps/api/event";
 import { open } from "@tauri-apps/plugin-dialog";
 import { useNavigate } from "@tanstack/react-router";
 import { Route } from "@/routes/library";
@@ -43,6 +44,14 @@ export function LibraryPage() {
     loadBooks();
   }, [loadBooks]);
 
+  // 监听文件监控自动导入事件
+  useEffect(() => {
+    const unlisten = listen("books-updated", () => {
+      loadBooks();
+    });
+    return () => { unlisten.then((fn) => fn()); };
+  }, [loadBooks]);
+
   const handleAddLibrary = useCallback(async () => {
     try {
       const selected = await open({
@@ -52,7 +61,7 @@ export function LibraryPage() {
       });
       if (!selected) return;
       setScanning(true);
-      await invoke("add_library", { path: selected });
+      await invoke("add_library", { path: selected, scanMode: "flat" });
       await loadBooks();
     } catch (e) {
       logger.error("Failed to add library", e);
@@ -118,7 +127,7 @@ export function LibraryPage() {
         <div className="grid grid-cols-[repeat(auto-fill,160px)] gap-6">
           {Array.from({ length: 8 }).map((_, i) => (
             <div key={i} className="w-[160px]">
-              <div className="panel-frame w-full aspect-[2/3] skeleton rounded-[22px]" />
+              <div className="w-full aspect-[2/3] skeleton rounded-[var(--radius-md)]" />
               <div className="mt-3 h-[14px] w-[78%] skeleton rounded" />
               <div className="mt-2 h-[12px] w-[46%] skeleton rounded" />
             </div>

@@ -2,6 +2,7 @@ import { useCallback, useEffect, useRef, useState } from "react";
 import { invoke } from "@tauri-apps/api/core";
 import { getCurrentWindow } from "@tauri-apps/api/window";
 import type { FitMode, ReadingDirection, ReadingMode } from "@/stores/settings";
+import type { FlipControl } from "./ReaderFlipView";
 
 interface UseReaderControlsParams {
   bookId: string;
@@ -10,7 +11,8 @@ interface UseReaderControlsParams {
   mode: ReadingMode;
   direction: ReadingDirection;
   fitMode: FitMode;
-  navigate: (options: { to: "/library" }) => void;
+  autoLoadNext: boolean;
+  navigate: (options: { to: string; params?: Record<string, string>; search?: Record<string, unknown> }) => void;
 }
 
 /**
@@ -24,6 +26,7 @@ export function useReaderControls({
   mode,
   direction,
   fitMode,
+  autoLoadNext,
   navigate,
 }: UseReaderControlsParams) {
   const [currentPage, setCurrentPage] = useState(initialPage);
@@ -42,12 +45,14 @@ export function useReaderControls({
   }, [bookId, initialPage]);
 
   const containerRef = useRef<HTMLDivElement>(null);
+  const flipControlRef = useRef<FlipControl | null>(null);
   const currentPageRef = useRef(initialPage);
   const isDraggingSlider = useRef(false);
   const sliderCommitTimer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const saveTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const lastSavedPageRef = useRef(initialPage);
   const wheelCooldown = useRef(false);
+  const loadingNextBook = useRef(false);
 
   const isRTL = direction === "rtl";
   const isWidthFit = fitMode === "width" && mode !== "scroll";
@@ -106,6 +111,15 @@ export function useReaderControls({
       const distance = Math.abs(targetPage - currentPage);
       if (distance === 0) return;
 
+      // 仿真模式：委托 PageFlip 实例跳页
+      if (mode === "flip") {
+        flipControlRef.current?.turnToPage(targetPage);
+        setCurrentPage(targetPage);
+        currentPageRef.current = targetPage;
+        saveProgress(targetPage);
+        return;
+      }
+
       if (source === "slider" || distance > 3) {
         setSlideDirection("none");
       } else {
@@ -123,16 +137,54 @@ export function useReaderControls({
     [totalPages, currentPage, isRTL, mode, saveProgress]
   );
 
+  /** 尝试加载同系列下一本书 */
+  const tryLoadNextBook = useCallback(async () => {
+    if (!autoLoadNext || loadingNextBook.current) return;
+    loadingNextBook.current = true;
+    try {
+      const nextBook = await invoke<{ hash: string } | null>("get_next_book", { hash: bookId });
+      if (nextBook) {
+        navigate({ to: "/reader/$bookId", params: { bookId: nextBook.hash }, search: { page: 0 } });
+      }
+    } catch (e) {
+      console.error("Failed to load next book:", e);
+    } finally {
+      loadingNextBook.current = false;
+    }
+  }, [autoLoadNext, bookId, navigate]);
+
   const goNext = useCallback(() => {
+    if (mode === "flip") {
+      // 仿真模式在最后一页时也尝试加载下一本
+      if (currentPage >= totalPages - 1) {
+        tryLoadNextBook();
+        return;
+      }
+      flipControlRef.current?.flipNext();
+      return;
+    }
     if (mode === "double") {
       const aligned = currentPage % 2 === 0 ? currentPage : currentPage - 1;
-      navigateToPage(Math.min(aligned + 2, totalPages - 1), "button");
+      const nextPage = aligned + 2;
+      if (nextPage >= totalPages) {
+        tryLoadNextBook();
+        return;
+      }
+      navigateToPage(Math.min(nextPage, totalPages - 1), "button");
     } else {
+      if (currentPage >= totalPages - 1) {
+        tryLoadNextBook();
+        return;
+      }
       navigateToPage(currentPage + 1, "button");
     }
-  }, [currentPage, totalPages, mode, navigateToPage]);
+  }, [currentPage, totalPages, mode, navigateToPage, tryLoadNextBook]);
 
   const goPrev = useCallback(() => {
+    if (mode === "flip") {
+      flipControlRef.current?.flipPrev();
+      return;
+    }
     if (mode === "double") {
       const aligned = currentPage % 2 === 0 ? currentPage : currentPage - 1;
       navigateToPage(Math.max(aligned - 2, 0), "button");
@@ -307,6 +359,7 @@ export function useReaderControls({
 
   return {
     containerRef,
+    flipControlRef,
     currentPage,
     displayPage,
     handleBack,

@@ -198,7 +198,8 @@ body {
   box-shadow: var(--shadow-md);
 }
 
-.panel-frame::before {
+/* 仅在主内容面板上显示装饰性内边框 */
+.panel-frame-inner::before {
   content: "";
   position: absolute;
   inset: 12px;

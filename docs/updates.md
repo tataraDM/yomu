@@ -2,7 +2,58 @@
 
 ## 本次更新 (2026-04-14)
 
-> 基于 `master` (307c48b) 的 bug 修复、阅读增强和主题完善。
+> 基于 `master` 的大规模功能新增、性能优化与 bug 修复。
+
+---
+
+### 新功能
+
+#### 仿真翻页模式 (FEAT-J)
+- 使用 `page-flip` 库实现贝塞尔曲线翻页动画，支持鼠标拖拽和点击翻页
+- RTL 方向正确映射，方向切换自动重建实例
+- toolbar 隐藏时显示浮动进度气泡（2 秒无操作后淡出）
+- flip 模式下禁用 GestureLayer 和 fitMode
+
+#### 并行扫描加速 (FEAT-K)
+- 添加 `rayon` 依赖，`scan_library_inner` 使用 `par_iter` 并行处理
+- 封面缩略图缩放从 `Lanczos3` 改为 `Triangle`（速度提升 3-5 倍）
+
+#### 文件夹导入模式 (FEAT-L)
+- `libraries` 表新增 `scan_mode` 列（flat/folder）
+- 新增 `assign_series_by_folder`：按子文件夹名自动分配系列名
+- 设置页添加"导入文件夹（子目录为系列）"按钮
+- 重扫描时保持原有 scan_mode
+
+#### 动态背景渐变 (FEAT-M)
+- 新增 `fast-average-color` 依赖
+- 书籍封面 hover 时提取主色
+- AppShell 渲染主色 radial-gradient 背景层（低透明度，1 秒过渡）
+
+#### Everything 全盘搜索 (FEAT-N)
+- 新增 `everything.rs`：通过 Everything 命令行工具 (es.exe) 搜索全盘漫画文件
+- 搜索页自动检测 Everything 可用性，支持全盘搜索 + 勾选批量导入
+- 过滤已在库中的文件，并行处理导入
+
+#### 收藏文件夹自动监控 (FEAT-O)
+- 新增 `watcher.rs`：使用 `notify` crate 监视所有已注册书库目录
+- 新文件检测后自动处理并导入数据库
+- 通过 `books-updated` Tauri 事件通知前端自动刷新
+- 支持 folder 模式的系列名自动分配
+
+#### 白边裁剪 (FEAT-P)
+- `ImageEnhanceOptions` 新增 `trimWhiteBorders`
+- CSS `clipPath: inset(2% 1.5%)` + `scale(1.04)` 视觉裁剪白边
+- 工具栏新增裁剪切换按钮
+
+#### 自动载入下一文件 (FEAT-Q)
+- 设置新增 `autoLoadNext`（默认开启）
+- 新增 `get_next_book` Rust 命令（同系列按标题排序取下一本）
+- 在最后一页翻页时自动导航到系列中的下一本
+
+#### 自定义阅读器背景色 (FEAT-R)
+- 设置新增 `readerBgColor`（默认 #000000）
+- 工具栏新增 6 个预设色圆形按钮 + 自定义调色盘选择器
+- 预设：黑、深灰、中灰、暖纸色、米黄、白
 
 ---
 
@@ -10,22 +61,8 @@
 
 | 编号 | 问题 | 修复方式 | 文件 |
 |---|---|---|---|
-| P1-11 | 浅色主题下侧边栏背景仍为黑色 | `bg-[#0b0b0b]` 改为 `bg-bg-surface-2` 主题变量 | `src/components/layout/Sidebar.tsx` |
-| P1-12 | 浅色主题下顶部标题栏背景仍为黑色 | `bg-[#0a0a0a]/92` 改为 `bg-bg-surface/92` 主题变量 | `src/components/layout/TitleBar.tsx` |
-| P1-13 | 全屏模式左侧存在缝隙（手动计算窗口位置导致） | 改用原生 `setFullscreen(true/false)` API，彻底消除边框偏移 | `src/components/reader/useReaderControls.ts` |
-
-### 新功能
-
-#### 图像增强阅读选项
-
-- **锐化**：轻微对比度+饱和度提升，模拟视觉锐利感
-- **色彩增强**：提高对比度和饱和度，让漫画颜色更鲜明
-- **文字增强**：高对比+略降亮度，让对话气泡中的文字更清晰可读
-- 三个按钮独立切换，可任意组合
-- 使用 CSS `filter` 实现，零后端开销，实时预览
-- 设置持久化到 Zustand store
-
-> 涉及文件：`src/stores/settings.ts`、`src/components/reader/ReaderPageImage.tsx`、`src/components/reader/ReaderViews.tsx`、`src/components/reader/ReaderToolbar.tsx`、`src/pages/ReaderPage.tsx`
+| P1-14 | 图像增强（锐化/色彩/文字）全部无效 | filter 值加倍；双页模式补传 imageEnhance；统一导出 buildEnhanceFilter | ReaderPageImage/DoublePageSpread/Views |
+| P1-15 | WebDAV/搜索页输入框白天模式不可见 | `bg-[#0d0d0d]` → `bg-bg-surface-2` | settings.backup/SearchPage |
 
 ---
 

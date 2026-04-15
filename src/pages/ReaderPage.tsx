@@ -169,7 +169,6 @@ export function ReaderPage() {
         mode={mode}
         direction={direction}
         fitMode={fitMode}
-        openMenu={controls.openMenu}
         modeOptions={modeOptions}
         dirOptions={dirOptions}
         fitOptions={fitOptions}
@@ -178,7 +177,6 @@ export function ReaderPage() {
         onSetMode={setMode}
         onSetDirection={setDirection}
         onSetFitMode={setFitMode}
-        onSetOpenMenu={controls.setOpenMenu}
         onSliderInput={controls.handleSliderInput}
         onSliderChange={controls.handleSliderChange}
         onSliderMouseDown={controls.handleSliderMouseDown}

@@ -35,7 +35,6 @@ export function useReaderControls({
   const [scrollRequestId, setScrollRequestId] = useState(0);
   const [showToolbar, setShowToolbar] = useState(true);
   const [isFullscreen, setIsFullscreen] = useState(false);
-  const [openMenu, setOpenMenu] = useState<"mode" | "dir" | "fit" | null>(null);
 
   // 当 bookId 或 initialPage 变化时重置页码（修 P1-9：防深链跳转时 state 残留）
   useEffect(() => {
@@ -373,11 +372,9 @@ export function useReaderControls({
     isFullscreen,
     isRTL,
     navigateToPage,
-    openMenu,
     previewPage,
     progressPercent,
     scrollRequestId,
-    setOpenMenu,
     setSlideDirection,
     slideDirection,
     showToolbar,
